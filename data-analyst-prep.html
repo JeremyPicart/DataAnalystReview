@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DataPrep — Révision Data Analyst</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+
+/* ── THEMES ── */
+[data-theme="light"]{
+  --bg:#f7f6f3;--surface:#ffffff;--surface2:#f0efe9;
+  --ink:#1a1a18;--ink2:#4a4a44;--ink3:#9a9a90;--ink4:#d0d0c8;
+  --line:#e8e8e0;
+  --green:#2d6a4f;--green-bg:#eaf4ee;
+  --amber:#92400e;--amber-bg:#fef3c7;
+  --red:#991b1b;--red-bg:#fee2e2;
+  --blue:#1e3a5f;--blue-bg:#e8f0fa;
+  --accent:#2d6a4f;
+  --toggle-icon:"🌙";
+  --code-bg:#fafaf8;
+  --table-head:#f0efe9;
+  --shadow:0 1px 3px rgba(0,0,0,0.06);
+}
+[data-theme="dark"]{
+  --bg:#141414;--surface:#1e1e1e;--surface2:#282828;
+  --ink:#e8e8e0;--ink2:#a8a89a;--ink3:#686860;--ink4:#383830;
+  --line:#2e2e2e;
+  --green:#4ade80;--green-bg:rgba(74,222,128,0.1);
+  --amber:#fbbf24;--amber-bg:rgba(251,191,36,0.1);
+  --red:#f87171;--red-bg:rgba(248,113,113,0.1);
+  --blue:#60a5fa;--blue-bg:rgba(96,165,250,0.1);
+  --accent:#4ade80;
+  --toggle-icon:"☀️";
+  --code-bg:#111111;
+  --table-head:#252525;
+  --shadow:0 1px 3px rgba(0,0,0,0.3);
+}
+
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--ink);font-family:'DM Sans',sans-serif;font-size:15px;line-height:1.6;min-height:100vh;transition:background 0.2s,color 0.2s;}
+
+/* ── HEADER ── */
+header{background:var(--surface);border-bottom:1px solid var(--line);padding:0 40px;height:58px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;transition:background 0.2s,border-color 0.2s;}
+.logo{font-family:'DM Serif Display',serif;font-size:19px;color:var(--ink);}
+.logo em{font-style:italic;color:var(--accent);}
+.header-right{display:flex;align-items:center;gap:16px;}
+.score-pill{font-family:'DM Mono',monospace;font-size:12px;color:var(--ink2);background:var(--surface2);padding:4px 12px;border-radius:20px;border:1px solid var(--line);}
+.score-pill strong{color:var(--accent);}
+.theme-btn{background:none;border:1px solid var(--line);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:14px;color:var(--ink2);transition:all 0.15s;}
+.theme-btn:hover{border-color:var(--ink3);}
+
+/* ── HERO ── */
+.hero{background:var(--surface);border-bottom:1px solid var(--line);padding:40px 40px 28px;transition:background 0.2s;}
+.hero h1{font-family:'DM Serif Display',serif;font-size:clamp(24px,3.5vw,40px);line-height:1.15;letter-spacing:-0.8px;margin-bottom:8px;}
+.hero h1 em{font-style:italic;color:var(--accent);}
+.hero p{font-size:13px;color:var(--ink2);font-weight:300;max-width:480px;line-height:1.7;}
+.stats-row{display:flex;gap:28px;margin-top:20px;padding-top:18px;border-top:1px solid var(--line);}
+.stat{display:flex;flex-direction:column;gap:1px;}
+.stat-val{font-family:'DM Serif Display',serif;font-size:24px;color:var(--ink);line-height:1;}
+.stat-label{font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:0.8px;font-weight:500;}
+
+/* ── TABS ── */
+.toolbar{background:var(--surface);border-bottom:1px solid var(--line);padding:0 40px;display:flex;align-items:center;overflow-x:auto;scrollbar-width:none;transition:background 0.2s;}
+.toolbar::-webkit-scrollbar{display:none;}
+.tab{display:inline-flex;align-items:center;gap:6px;padding:13px 14px;font-size:12px;font-weight:500;color:var(--ink3);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;white-space:nowrap;transition:all 0.15s;font-family:'DM Sans',sans-serif;margin-bottom:-1px;}
+.tab:hover{color:var(--ink);}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.tab-prog{font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);background:var(--surface2);padding:1px 5px;border-radius:8px;border:1px solid var(--line);}
+.tab.active .tab-prog{background:var(--green-bg);color:var(--accent);border-color:transparent;}
+
+/* ── FILTERS ── */
+.filters{padding:12px 40px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--bg);border-bottom:1px solid var(--line);}
+.filter-label{font-size:10px;color:var(--ink3);font-weight:600;text-transform:uppercase;letter-spacing:0.6px;}
+.filter-btn{padding:4px 10px;border-radius:4px;border:1px solid var(--line);background:var(--surface);font-size:11px;font-weight:500;color:var(--ink2);cursor:pointer;transition:all 0.12s;font-family:'DM Sans',sans-serif;}
+.filter-btn:hover{border-color:var(--ink3);}
+.filter-btn.active{background:var(--ink);color:var(--surface);border-color:var(--ink);}
+[data-theme="dark"] .filter-btn.active{background:var(--accent);color:#141414;border-color:var(--accent);}
+.fsep{width:1px;height:14px;background:var(--line);}
+
+/* ── PROGRESS ── */
+.prog-wrap{padding:10px 40px 12px;background:var(--bg);}
+.prog-track{height:2px;background:var(--line);border-radius:2px;overflow:hidden;}
+.prog-fill{height:100%;background:var(--accent);border-radius:2px;transition:width 0.4s ease;}
+.prog-info{display:flex;justify-content:space-between;margin-top:4px;font-size:10px;color:var(--ink3);font-family:'DM Mono',monospace;}
+
+/* ── MAIN ── */
+.main{max-width:780px;margin:0 auto;padding:14px 20px 80px;}
+
+/* ── CARD ── */
+.q-card{background:var(--surface);border:1px solid var(--line);border-radius:7px;margin-bottom:7px;overflow:hidden;animation:fadeIn 0.2s ease both;transition:background 0.2s,border-color 0.2s;}
+.q-card.answered-card{opacity:0.75;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px);}to{opacity:1;transform:translateY(0);}}
+
+.q-meta{display:flex;align-items:center;gap:5px;padding:11px 16px 0;}
+.badge{font-family:'DM Mono',monospace;font-size:9px;font-weight:500;padding:2px 6px;border-radius:3px;text-transform:uppercase;letter-spacing:0.4px;}
+.b-basic{background:var(--green-bg);color:var(--green);}
+.b-inter{background:var(--amber-bg);color:var(--amber);}
+.b-adv{background:var(--red-bg);color:var(--red);}
+.b-cat{background:var(--blue-bg);color:var(--blue);}
+.b-type{background:var(--surface2);color:var(--ink3);border:1px solid var(--line);}
+.b-done{background:var(--green-bg);color:var(--green);margin-left:auto;}
+.q-num{margin-left:auto;font-family:'DM Mono',monospace;font-size:9px;color:var(--ink4);}
+
+.q-body{padding:9px 16px 14px;}
+.q-text{font-size:14px;color:var(--ink);line-height:1.6;margin-bottom:12px;}
+
+/* ── TABLE PREVIEW ── */
+.table-preview{margin-bottom:13px;}
+.table-toggle{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--ink3);cursor:pointer;border:1px solid var(--line);background:var(--surface2);padding:4px 10px;border-radius:4px;font-family:'DM Mono',monospace;transition:all 0.12s;user-select:none;}
+.table-toggle:hover{color:var(--accent);border-color:var(--accent);}
+.table-toggle .arrow{transition:transform 0.15s;display:inline-block;}
+.table-toggle.open .arrow{transform:rotate(90deg);}
+.table-wrap{display:none;margin-top:8px;overflow-x:auto;border:1px solid var(--line);border-radius:5px;}
+.table-wrap.show{display:block;}
+.preview-table{width:100%;border-collapse:collapse;font-family:'DM Mono',monospace;font-size:11px;}
+.preview-table th{background:var(--table-head);color:var(--ink2);padding:6px 10px;text-align:left;border-bottom:1px solid var(--line);font-weight:500;white-space:nowrap;}
+.preview-table td{padding:5px 10px;border-bottom:1px solid var(--line);color:var(--ink2);white-space:nowrap;}
+.preview-table tr:last-child td{border-bottom:none;}
+.preview-table tr:hover td{background:var(--surface2);}
+
+/* ── QCM ── */
+.options{display:flex;flex-direction:column;gap:5px;margin-bottom:11px;}
+.opt{display:flex;align-items:flex-start;gap:8px;padding:8px 12px;border-radius:5px;border:1px solid var(--line);cursor:pointer;transition:all 0.12s;font-size:13px;color:var(--ink2);line-height:1.5;}
+.opt:hover:not(.disabled){border-color:var(--accent);background:var(--green-bg);color:var(--ink);}
+.opt.disabled{cursor:default;}
+.opt.correct{background:var(--green-bg);border-color:var(--green);color:var(--green);}
+.opt.wrong{background:var(--red-bg);border-color:var(--red);color:var(--red);}
+.opt-l{flex-shrink:0;width:17px;height:17px;border-radius:3px;background:var(--line);display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:9px;font-weight:500;margin-top:2px;}
+.correct .opt-l{background:var(--green);color:white;}
+.wrong .opt-l{background:var(--red);color:white;}
+
+/* ── CODE / OPEN ── */
+.code-input{width:100%;font-family:'DM Mono',monospace;font-size:12px;line-height:1.7;padding:11px 13px;background:var(--code-bg);border:1px solid var(--line);border-radius:5px;color:var(--ink);resize:vertical;min-height:95px;outline:none;transition:border-color 0.15s;margin-bottom:9px;}
+.code-input:focus{border-color:var(--ink3);}
+.code-input::placeholder{color:var(--ink4);}
+.open-input{width:100%;font-family:'DM Sans',sans-serif;font-size:13px;line-height:1.7;padding:9px 12px;background:var(--code-bg);border:1px solid var(--line);border-radius:5px;color:var(--ink);resize:vertical;min-height:75px;outline:none;transition:border-color 0.15s;margin-bottom:9px;}
+.open-input:focus{border-color:var(--ink3);}
+.open-input::placeholder{color:var(--ink4);}
+
+/* ── BUTTONS ── */
+.btn-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+.btn{padding:6px 13px;border-radius:4px;font-size:12px;font-weight:500;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;transition:all 0.12s;}
+.btn-dark{background:var(--ink);color:var(--surface);}
+.btn-dark:hover{opacity:0.85;}
+[data-theme="dark"] .btn-dark{background:var(--accent);color:#141414;}
+.btn-out{background:transparent;border:1px solid var(--line);color:var(--ink2);}
+.btn-out:hover{border-color:var(--ink3);color:var(--ink);}
+.feedback{font-size:11px;font-weight:500;}
+.fb-ok{color:var(--green);}
+.fb-ko{color:var(--red);}
+
+/* ── EXPLANATION ── */
+.expl{display:none;margin-top:11px;padding:11px 13px;background:var(--surface2);border-radius:5px;border-left:3px solid var(--accent);}
+.expl.show{display:block;animation:fadeIn 0.2s ease;}
+.expl-lbl{font-size:9px;text-transform:uppercase;letter-spacing:0.8px;color:var(--accent);font-weight:600;margin-bottom:6px;font-family:'DM Mono',monospace;}
+.expl-txt{font-size:12px;color:var(--ink2);line-height:1.7;}
+.expl-code{font-family:'DM Mono',monospace;font-size:11px;background:var(--code-bg);border:1px solid var(--line);border-radius:4px;padding:10px 12px;margin-top:8px;white-space:pre;overflow-x:auto;color:var(--ink2);line-height:1.7;display:block;}
+
+/* ── EMPTY ── */
+.empty{text-align:center;padding:56px 20px;color:var(--ink3);}
+.empty-icon{font-size:30px;margin-bottom:10px;}
+.empty p{font-size:13px;}
+
+@media(max-width:600px){
+  header,.hero,.toolbar,.filters,.prog-wrap{padding-left:16px;padding-right:16px;}
+  .main{padding:10px 10px 60px;}
+  .stats-row{gap:16px;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Data<em>Prep</em></div>
+  <div class="header-right">
+    <div class="score-pill" id="scorePill">QCM : <strong>0 / 0</strong></div>
+    <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">🌙</button>
+  </div>
+</header>
+
+<div class="hero">
+  <h1>Révise avant ton<br><em>entretien</em> Data Analyst</h1>
+  <p>SQL, DAX, Power BI, Python, Modélisation — questions pratiques classées par niveau et par type.</p>
+  <div class="stats-row">
+    <div class="stat"><span class="stat-val" id="sTotal">0</span><span class="stat-label">Questions</span></div>
+    <div class="stat"><span class="stat-val" id="sAnswered">0</span><span class="stat-label">Répondues</span></div>
+    <div class="stat"><span class="stat-val" id="sScore">—</span><span class="stat-label">Score QCM</span></div>
+    <div class="stat"><span class="stat-val" id="sPct">0%</span><span class="stat-label">Progression</span></div>
+  </div>
+</div>
+
+<div class="toolbar" id="catTabs">
+  <button class="tab active" onclick="setF('cat','all',this)">Toutes <span class="tab-prog" id="tp-all">0/0</span></button>
+  <button class="tab" onclick="setF('cat','SQL',this)">SQL <span class="tab-prog" id="tp-SQL">0/0</span></button>
+  <button class="tab" onclick="setF('cat','DAX',this)">DAX / Power BI <span class="tab-prog" id="tp-DAX">0/0</span></button>
+  <button class="tab" onclick="setF('cat','Modélisation',this)">Modélisation <span class="tab-prog" id="tp-Modélisation">0/0</span></button>
+  <button class="tab" onclick="setF('cat','Python',this)">Python <span class="tab-prog" id="tp-Python">0/0</span></button>
+  <button class="tab" onclick="setF('cat','Théorie',this)">Théorie <span class="tab-prog" id="tp-Théorie">0/0</span></button>
+</div>
+
+<div class="filters">
+  <span class="filter-label">Niveau</span>
+  <button class="filter-btn active" onclick="setF('level','all',this)">Tous</button>
+  <button class="filter-btn" onclick="setF('level','basic',this)">Basique</button>
+  <button class="filter-btn" onclick="setF('level','inter',this)">Intermédiaire</button>
+  <button class="filter-btn" onclick="setF('level','advanced',this)">Avancé</button>
+  <div class="fsep"></div>
+  <span class="filter-label">Type</span>
+  <button class="filter-btn active" onclick="setF('type','all',this)">Tous</button>
+  <button class="filter-btn" onclick="setF('type','qcm',this)">QCM</button>
+  <button class="filter-btn" onclick="setF('type','code',this)">Code</button>
+  <button class="filter-btn" onclick="setF('type','open',this)">Ouvertes</button>
+  <div class="fsep"></div>
+  <span class="filter-label">Statut</span>
+  <button class="filter-btn active" onclick="setF('status','all',this)">Toutes</button>
+  <button class="filter-btn" onclick="setF('status','unanswered',this)">Non répondues</button>
+  <button class="filter-btn" onclick="setF('status','correct',this)">✓ Correctes</button>
+  <button class="filter-btn" onclick="setF('status','wrong',this)">✗ À revoir</button>
+</div>
+
+<div class="prog-wrap">
+  <div class="prog-track"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+  <div class="prog-info"><span id="progL">0 répondu</span><span id="progR">0%</span></div>
+</div>
+
+<div class="main"><div id="qList"></div></div>
+
+<script>
+// ══════════════════════════════════════════
+// THEME
+// ══════════════════════════════════════════
+function toggleTheme(){
+  const h=document.documentElement;
+  const isDark=h.getAttribute('data-theme')==='dark';
+  h.setAttribute('data-theme',isDark?'light':'dark');
+  document.getElementById('themeBtn').textContent=isDark?'🌙':'☀️';
+}
+
+// ══════════════════════════════════════════
+// TABLE SAMPLES
+// ══════════════════════════════════════════
+const TABLES={
+  commandes:{
+    cols:['id_commande','id_client','montant','statut','date_commande'],
+    rows:[['1001','C01','250.00','payée','2024-01-15'],['1002','C02','89.50','en attente','2024-01-16'],['1003','C01','430.00','payée','2024-01-18'],['1004','C03','120.00','annulée','2024-01-20'],['1005','C02','310.00','payée','2024-01-22']]
+  },
+  employes:{
+    cols:['id_employe','nom','id_departement','salaire'],
+    rows:[['E01','Dupont','D01','38000'],['E02','Martin','D01','42000'],['E03','Bernard','D02','35000'],['E04','Durand','D02','48000'],['E05','Petit','D01','39000']]
+  },
+  departements:{
+    cols:['id_departement','nom_departement','budget'],
+    rows:[['D01','Marketing','250000'],['D02','Technique','400000'],['D03','RH','120000'],['D04','Finance','180000']]
+  },
+  transactions:{
+    cols:['id_transaction','id_client','montant','date_transaction'],
+    rows:[['T001','C01','100.00','2024-01-05'],['T002','C01','250.00','2024-01-12'],['T003','C02','80.00','2024-01-08'],['T004','C01','50.00','2024-01-20'],['T005','C02','200.00','2024-01-15']]
+  },
+  ventes:{
+    cols:['id_vente','id_produit','id_client','quantite','prix_unitaire'],
+    rows:[['V001','P01','C01','3','29.99'],['V002','P02','C02','1','149.00'],['V003','P01','C03','2','29.99'],['V004','P03','C01','5','9.99'],['V005','P02','C04','1','149.00']]
+  },
+  produits:{
+    cols:['id_produit','nom_produit','categorie','prix'],
+    rows:[['P01','T-shirt Basic','Vêtements','29.99'],['P02','Laptop Pro','Électronique','149.00'],['P03','Cahier A4','Papeterie','9.99'],['P04','Casque Audio','Électronique','79.00'],['P05','Stylo Pack','Papeterie','4.99']]
+  },
+  clients:{
+    cols:['id_client','nom','ville','segment'],
+    rows:[['C01','Dupont SA','Paris','Grand'],['C02','Martin SAS','Lyon','Moyen'],['C03','Bernard Corp','Bordeaux','Petit'],['C04','Durand SARL','Nantes','Moyen'],['C05','Petit & Co','Marseille','Grand']]
+  },
+  logs:{
+    cols:['id_log','user_id','action','timestamp','page'],
+    rows:[['1','U01','click','2024-01-15 09:12:03','/accueil'],['2','U02','view','2024-01-15 09:13:44','/produits'],['3','U01','purchase','2024-01-15 09:15:20','/checkout'],['4','U03','click','2024-01-15 09:18:00','/accueil'],['5','U02','purchase','2024-01-15 09:20:10','/checkout']]
+  }
+};
+
+function tableHTML(name){
+  const t=TABLES[name];
+  if(!t)return'';
+  let h=`<table class="preview-table"><thead><tr>`;
+  t.cols.forEach(c=>h+=`<th>${c}</th>`);
+  h+=`</tr></thead><tbody>`;
+  t.rows.forEach(r=>{h+=`<tr>`;r.forEach(c=>h+=`<td>${c}</td>`);h+=`</tr>`;});
+  h+=`</tbody></table>`;
+  return h;
+}
+
+function toggleTable(btn){
+  btn.classList.toggle('open');
+  btn.nextElementSibling.classList.toggle('show');
+  btn.querySelector('.arrow').textContent=btn.classList.contains('open')?'▼':'▶';
+}
+
+function tablePreview(tables){
+  if(!tables||!tables.length)return'';
+  const labels=tables.map(t=>`<span style="font-weight:500">${t}</span>`).join(', ');
+  let html=`<div class="table-preview">
+    <div class="table-toggle" onclick="toggleTable(this)">
+      <span class="arrow">▶</span> Aperçu des tables : ${labels}
+    </div>
+    <div class="table-wrap">`;
+  tables.forEach(t=>{
+    html+=`<div style="padding:8px 0 4px 10px;font-size:10px;font-family:'DM Mono',monospace;color:var(--ink3);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--line)">Table : ${t}</div>${tableHTML(t)}`;
+  });
+  html+=`</div></div>`;
+  return html;
+}
+
+// ══════════════════════════════════════════
+// QUESTIONS
+// ══════════════════════════════════════════
+const Q=[
+// ─── SQL BASIQUE ───
+{id:1,cat:'SQL',level:'basic',type:'qcm',tables:['commandes'],
+q:'Quelle clause filtre les résultats APRÈS une agrégation GROUP BY ?',
+opts:['WHERE','HAVING','FILTER','DISTINCT'],ans:1,
+expl:'WHERE filtre avant l\'agrégation. HAVING filtre après. Ex : GROUP BY id_client HAVING SUM(montant) > 1000.'},
+
+{id:2,cat:'SQL',level:'basic',type:'qcm',tables:['commandes','clients'],
+q:'Quelle est la différence entre INNER JOIN et LEFT JOIN ?',
+opts:['Aucune différence','INNER JOIN retourne uniquement les lignes correspondantes dans les deux tables','LEFT JOIN retourne uniquement la table de droite','INNER JOIN est toujours plus lent'],
+ans:1,expl:'INNER JOIN = intersection stricte. LEFT JOIN = toutes les lignes de gauche + correspondances droite (NULL si absent). Utilise LEFT JOIN pour garder les clients sans commandes.'},
+
+{id:3,cat:'SQL',level:'basic',type:'qcm',
+q:'Que retourne COUNT(*) vs COUNT(colonne) ?',
+opts:['Identique dans tous les cas','COUNT(*) compte toutes les lignes, COUNT(col) ignore les NULL','COUNT(col) compte toutes les lignes','COUNT(*) ignore les doublons'],
+ans:1,expl:'COUNT(*) = toutes les lignes y compris celles avec NULL. COUNT(colonne) = ignore les NULL de cette colonne. COUNT(DISTINCT col) = valeurs uniques non nulles.'},
+
+{id:4,cat:'SQL',level:'basic',type:'qcm',
+q:'Quel mot-clé supprime les doublons dans un SELECT ?',
+opts:['UNIQUE','FILTER','DISTINCT','REMOVE'],ans:2,
+expl:'SELECT DISTINCT col1, col2 retourne les combinaisons uniques. S\'applique à toutes les colonnes du SELECT simultanément. Attention : coûteux sur de grands volumes.'},
+
+{id:5,cat:'SQL',level:'basic',type:'code',tables:['commandes'],
+q:'Retourne le montant total des commandes par client, uniquement pour les commandes au statut "payée", triées par total décroissant.',
+code:`SELECT
+    id_client,
+    SUM(montant) AS montant_total
+FROM commandes
+WHERE statut = 'payée'
+GROUP BY id_client
+ORDER BY montant_total DESC`,
+expl:'WHERE filtre avant GROUP BY — seules les lignes statut=payée sont agrégées. ORDER BY sur l\'alias est possible dans ce contexte.'},
+
+{id:6,cat:'SQL',level:'basic',type:'qcm',tables:['commandes'],
+q:'Quelle est la différence entre TRUNCATE et DELETE ?',
+opts:['Synonymes','DELETE peut filtrer avec WHERE et est loggué ligne par ligne. TRUNCATE vide tout et est plus rapide','TRUNCATE garde les logs de transaction','DELETE ne peut pas être annulé'],
+ans:1,expl:'DELETE FROM table WHERE... supprime des lignes filtrées, peut être rollback. TRUNCATE vide la table entière instantanément (pas de log ligne par ligne), difficile à annuler selon le SGBD.'},
+
+{id:7,cat:'SQL',level:'basic',type:'qcm',
+q:'Que fait le mot-clé NULL en SQL ? Quelle est la bonne façon de tester une valeur NULL ?',
+opts:['NULL = 0 en SQL','NULL = valeur inconnue. On teste avec IS NULL / IS NOT NULL, jamais avec = NULL','NULL = chaîne vide','NULL s\'utilise avec = NULL'],
+ans:1,expl:'NULL signifie "valeur inconnue". NULL = NULL retourne NULL (pas TRUE). On utilise toujours IS NULL ou IS NOT NULL. COALESCE(col, valeur_defaut) remplace les NULL.'},
+
+{id:8,cat:'SQL',level:'basic',type:'code',tables:['clients','commandes'],
+q:'Retourne la liste de tous les clients avec le nombre de leurs commandes, y compris ceux qui n\'ont aucune commande.',
+code:`SELECT
+    c.id_client,
+    c.nom,
+    COUNT(o.id_commande) AS nb_commandes
+FROM clients c
+LEFT JOIN commandes o ON o.id_client = c.id_client
+GROUP BY c.id_client, c.nom
+ORDER BY nb_commandes DESC`,
+expl:'LEFT JOIN est essentiel ici — il conserve les clients sans commandes (COUNT = 0). Avec INNER JOIN, ils disparaîtraient du résultat.'},
+
+// ─── SQL INTERMEDIAIRE ───
+{id:9,cat:'SQL',level:'inter',type:'qcm',tables:['commandes'],
+q:'À quoi sert ROW_NUMBER() OVER (PARTITION BY id_client ORDER BY date_commande DESC) ?',
+opts:['Compte le nombre de clients','Numérote les lignes par client, triées par date décroissante','Retourne la dernière commande de tous les clients','Classe les clients par montant'],
+ans:1,expl:'ROW_NUMBER() attribue 1, 2, 3... à chaque ligne dans une partition. Très utile pour extraire la dernière commande de chaque client avec WHERE rn = 1 dans une sous-requête ou CTE.'},
+
+{id:10,cat:'SQL',level:'inter',type:'qcm',
+q:'Quelle est la différence entre UNION et UNION ALL ?',
+opts:['Aucune différence','UNION supprime les doublons (coûteux). UNION ALL conserve tout et est plus rapide','UNION ALL est plus lent','UNION fonctionne uniquement avec des tables identiques'],
+ans:1,expl:'UNION effectue une déduplication (opération coûteuse). UNION ALL empile sans déduplication. Utilise UNION ALL par défaut sauf besoin explicite de déduplication.'},
+
+{id:11,cat:'SQL',level:'inter',type:'code',tables:['employes','departements'],
+q:'Avec un CTE, retourne par département : nombre d\'employés et budget moyen par employé. Filtre les départements avec plus de 3 employés.',
+code:`WITH dept_stats AS (
+    SELECT
+        d.id_departement,
+        d.nom_departement,
+        d.budget,
+        COUNT(e.id_employe) AS nb_employes
+    FROM departements d
+    INNER JOIN employes e ON e.id_departement = d.id_departement
+    GROUP BY d.id_departement, d.nom_departement, d.budget
+    HAVING COUNT(e.id_employe) > 3
+)
+SELECT
+    nom_departement,
+    nb_employes,
+    ROUND(budget / nb_employes, 2) AS budget_par_employe
+FROM dept_stats
+ORDER BY budget_par_employe DESC`,
+expl:'Le CTE améliore la lisibilité et peut être réutilisé. HAVING dans le CTE réduit les données en amont. Le calcul budget/nb_employes se fait dans la requête finale.'},
+
+{id:12,cat:'SQL',level:'inter',type:'qcm',
+q:'Dans quel ordre logique SQL exécute-t-il une requête SELECT ?',
+opts:['SELECT → FROM → WHERE → GROUP BY → HAVING → ORDER BY','FROM → JOIN → WHERE → GROUP BY → HAVING → SELECT → ORDER BY → LIMIT','WHERE → FROM → SELECT → GROUP BY → ORDER BY','FROM → SELECT → WHERE → HAVING → ORDER BY'],
+ans:1,expl:'Ordre d\'exécution logique : FROM/JOIN → WHERE → GROUP BY → HAVING → SELECT → DISTINCT → ORDER BY → LIMIT. C\'est pourquoi on ne peut pas utiliser un alias du SELECT dans le WHERE (il n\'existe pas encore).'},
+
+{id:13,cat:'SQL',level:'inter',type:'code',tables:['commandes'],
+q:'Retourne les 3 clients ayant le plus dépensé avec leur total de commandes payées.',
+code:`SELECT
+    id_client,
+    SUM(montant) AS total_depense
+FROM commandes
+WHERE statut = 'payée'
+GROUP BY id_client
+ORDER BY total_depense DESC
+LIMIT 3`,
+expl:'ORDER BY ... DESC + LIMIT N est la syntaxe standard. Sur SQL Server : SELECT TOP 3. Sur Oracle : FETCH FIRST 3 ROWS ONLY.'},
+
+{id:14,cat:'SQL',level:'inter',type:'qcm',tables:['transactions'],
+q:'Quelle window function utilises-tu pour accéder à la valeur de la ligne précédente dans une fenêtre ordonnée ?',
+opts:['PREV()','LAG()','BEFORE()','SHIFT()'],ans:1,
+expl:'LAG(col, n, default) retourne la valeur de n lignes en arrière (1 par défaut). LEAD(col, n) retourne la valeur de n lignes en avant. Très utile pour des calculs de variation sans auto-jointure.'},
+
+{id:15,cat:'SQL',level:'inter',type:'code',tables:['commandes'],
+q:'Pour chaque client, retourne sa commande la plus récente uniquement (1 ligne par client).',
+code:`WITH ranked AS (
+    SELECT
+        *,
+        ROW_NUMBER() OVER (
+            PARTITION BY id_client
+            ORDER BY date_commande DESC
+        ) AS rn
+    FROM commandes
+)
+SELECT id_client, id_commande, montant, date_commande
+FROM ranked
+WHERE rn = 1`,
+expl:'Le CTE + ROW_NUMBER() est le pattern classique pour "1 ligne par groupe selon un critère". PARTITION BY définit le groupe, ORDER BY définit le tri, WHERE rn = 1 garde le premier.'},
+
+{id:16,cat:'SQL',level:'inter',type:'qcm',tables:['ventes','produits'],
+q:'Quelle est la différence entre une sous-requête corrélée et une sous-requête non corrélée ?',
+opts:['Aucune différence','La sous-requête corrélée référence la requête externe et est exécutée pour chaque ligne. La non-corrélée est indépendante et exécutée une seule fois','La sous-requête corrélée est toujours plus performante','Une sous-requête corrélée ne peut pas utiliser WHERE'],
+ans:1,expl:'Non-corrélée : SELECT * FROM t WHERE id IN (SELECT id FROM autre) — exécutée une fois. Corrélée : SELECT * FROM t WHERE montant > (SELECT AVG(montant) FROM t2 WHERE t2.cat = t.cat) — exécutée pour chaque ligne. Les CTE sont souvent préférables aux sous-requêtes corrélées.'},
+
+// ─── SQL AVANCÉ ───
+{id:17,cat:'SQL',level:'advanced',type:'code',tables:['transactions'],
+q:'Retourne pour chaque client et chaque transaction le montant cumulé au fil du temps.',
+code:`SELECT
+    id_client,
+    id_transaction,
+    montant,
+    date_transaction,
+    SUM(montant) OVER (
+        PARTITION BY id_client
+        ORDER BY date_transaction ASC
+        ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+    ) AS montant_cumule
+FROM transactions
+ORDER BY id_client, date_transaction`,
+expl:'SUM() OVER est une window function. PARTITION BY id_client repart de 0 pour chaque client. ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW précise la fenêtre glissante cumulée.'},
+
+{id:18,cat:'SQL',level:'advanced',type:'qcm',tables:['ventes'],
+q:'Qu\'est-ce qu\'un index et quand peut-il nuire aux performances ?',
+opts:['Un index accélère toujours sans inconvénient','Un index accélère les lectures (SELECT) mais ralentit les écritures (INSERT/UPDATE/DELETE) et occupe de l\'espace disque','Un index est utile uniquement sur les clés primaires','Un index remplace le HAVING'],
+ans:1,expl:'Un index = structure auxiliaire qui accélère les recherches. Mais chaque écriture doit aussi mettre à jour l\'index. Trop d\'index ralentit les écritures. À utiliser sur les colonnes fréquemment filtrées, jointes ou triées.'},
+
+{id:19,cat:'SQL',level:'advanced',type:'code',tables:['ventes','produits'],
+q:'Retourne pour chaque produit son CA et sa part en % du CA total, en une seule requête.',
+code:`SELECT
+    id_produit,
+    SUM(quantite * prix_unitaire) AS ca_produit,
+    ROUND(
+        SUM(quantite * prix_unitaire) * 100.0
+        / SUM(SUM(quantite * prix_unitaire)) OVER (),
+        2
+    ) AS pct_ca_total
+FROM ventes
+GROUP BY id_produit
+ORDER BY ca_produit DESC`,
+expl:'SUM(SUM(...)) OVER () est une window function sur l\'agrégat. Le OVER() vide = fenêtre sur toute la table. Pas besoin de sous-requête ni de CTE séparé.'},
+
+{id:20,cat:'SQL',level:'advanced',type:'qcm',tables:['transactions'],
+q:'Qu\'est-ce que le principe de "SARGability" en SQL ?',
+opts:['Un type de jointure','La capacité d\'une condition WHERE à utiliser un index efficacement — éviter les fonctions sur les colonnes indexées','Un niveau de transaction','Un type d\'agrégation'],
+ans:1,expl:'SARGable (Search ARGument able) = une condition peut utiliser un index. Non-SARGable : WHERE YEAR(date) = 2024 (fonction sur la colonne). SARGable : WHERE date >= \'2024-01-01\' AND date < \'2025-01-01\'. Les fonctions sur colonnes indexées empêchent l\'utilisation de l\'index.'},
+
+{id:21,cat:'SQL',level:'advanced',type:'code',tables:['commandes','clients'],
+q:'Trouve les clients qui ont passé des commandes chaque mois pendant les 3 derniers mois (fidélité consécutive).',
+code:`WITH monthly AS (
+    SELECT
+        id_client,
+        DATE_TRUNC('month', date_commande) AS mois
+    FROM commandes
+    WHERE date_commande >= DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '3 months'
+    GROUP BY id_client, DATE_TRUNC('month', date_commande)
+),
+client_months AS (
+    SELECT id_client, COUNT(DISTINCT mois) AS nb_mois
+    FROM monthly
+    GROUP BY id_client
+)
+SELECT c.id_client, c.nom
+FROM client_months cm
+JOIN clients c ON c.id_client = cm.id_client
+WHERE cm.nb_mois = 3`,
+expl:'DATE_TRUNC tronque la date au mois. On compte les mois distincts par client sur la période. Si nb_mois = 3, le client a commandé les 3 derniers mois. Adapter DATE_TRUNC selon le SGBD (MySQL : DATE_FORMAT).'},
+
+// ─── DAX BASIQUE ───
+{id:22,cat:'DAX',level:'basic',type:'qcm',
+q:'Quelle est la différence entre une mesure et une colonne calculée en DAX ?',
+opts:['Aucune différence','La mesure est calculée dynamiquement selon le contexte de filtre. La colonne est calculée au refresh et stockée en mémoire','La colonne calculée est toujours plus performante','Une mesure ne peut pas utiliser CALCULATE'],
+ans:1,expl:'Colonne calculée : évaluée ligne par ligne au refresh, stockée dans le modèle. Mesure : calculée à la demande selon le contexte de filtre actif. Préférer les mesures pour les agrégations, les colonnes pour les attributs fixes.'},
+
+{id:23,cat:'DAX',level:'basic',type:'qcm',
+q:'Que fait DIVIDE(num, denom, 0) par rapport à l\'opérateur / ?',
+opts:['Identique','DIVIDE gère la division par zéro en retournant la valeur par défaut (0 ou BLANK())','DIVIDE est plus lent','/ est préféré en DAX'],
+ans:1,expl:'L\'opérateur / génère une erreur ou INFINITY si diviseur = 0. DIVIDE(num, denom, alt) retourne alt si le dénominateur est nul. Toujours préférer DIVIDE dans les mesures.'},
+
+{id:24,cat:'DAX',level:'basic',type:'code',
+q:'Écris les deux mesures fondamentales : CA Total et CA de l\'année précédente.',
+code:`CA Total = SUM(fact_ventes[montant])
+
+CA Last Year =
+CALCULATE(
+    [CA Total],
+    SAMEPERIODLASTYEAR(dim_date[date])
+)`,
+expl:'SAMEPERIODLASTYEAR est une fonction Time Intelligence. Prérequis : dim_date doit être marquée "Table de dates" dans Power BI et avoir une colonne date continue sans trous.'},
+
+{id:25,cat:'DAX',level:'basic',type:'qcm',
+q:'Qu\'est-ce que BLANK() en DAX et quand l\'utiliser ?',
+opts:['Synonyme de 0','Valeur vide/nulle DAX — préférable à 0 quand l\'absence de données doit être distinguée d\'une valeur nulle réelle','Synonyme de NULL SQL','BLANK() provoque une erreur dans les calculs'],
+ans:1,expl:'BLANK() représente l\'absence de valeur. BLANK() + 0 = 0, BLANK() * n = BLANK(). Dans les mesures, retourner BLANK() plutôt que 0 évite d\'afficher des lignes vides dans les visuels.'},
+
+// ─── DAX INTERMEDIAIRE ───
+{id:26,cat:'DAX',level:'inter',type:'qcm',
+q:'Que fait ALL(dim_produit) dans un CALCULATE ?',
+opts:['Filtre tous les produits','Supprime tous les filtres actifs sur la table dim_produit','Retourne la somme de tous les produits','Crée une nouvelle table'],
+ans:1,expl:'ALL() supprime le contexte de filtre d\'une table ou colonne. Essentiel pour calculer des % : le dénominateur ignore le filtre du visuel pour retourner le total global.'},
+
+{id:27,cat:'DAX',level:'inter',type:'code',
+q:'Calcule la part du CA de chaque produit en % du CA total, indépendamment des filtres actifs.',
+code:`CA % Total =
+DIVIDE(
+    [CA Total],
+    CALCULATE([CA Total], ALL(dim_produit))
+)`,
+expl:'Numérateur : CA avec le filtre produit actif (du visuel). Dénominateur : CA ignorant le filtre produit grâce à ALL(). DIVIDE gère la division par zéro.'},
+
+{id:28,cat:'DAX',level:'inter',type:'qcm',
+q:'Qu\'est-ce que ALLEXCEPT() et en quoi diffère-t-il de ALL() ?',
+opts:['Synonymes','ALLEXCEPT(table, col1) supprime tous les filtres SAUF ceux des colonnes listées','ALLEXCEPT filtre une seule colonne','ALLEXCEPT est plus lent que ALL'],
+ans:1,expl:'ALL(table) supprime tous les filtres sur la table. ALLEXCEPT(table, col1, col2) supprime tous les filtres SAUF ceux des colonnes listées. Utile pour des parts conservant un filtre date par exemple.'},
+
+{id:29,cat:'DAX',level:'inter',type:'code',
+q:'Écris une mesure de croissance du CA vs année précédente en %, avec gestion propre du cas sans données N-1.',
+code:`Croissance CA % =
+VAR ca_n = [CA Total]
+VAR ca_n1 = [CA Last Year]
+RETURN
+DIVIDE(
+    ca_n - ca_n1,
+    ca_n1,
+    BLANK()
+)`,
+expl:'L\'usage de VAR améliore la lisibilité et les performances (chaque mesure est calculée une seule fois). BLANK() est préférable à 0 : évite d\'afficher 0% quand N-1 n\'existe pas.'},
+
+{id:30,cat:'DAX',level:'inter',type:'qcm',
+q:'Pourquoi utiliser VAR dans une mesure DAX ?',
+opts:['VAR est obligatoire en DAX','VAR améliore la lisibilité et les performances — chaque expression n\'est calculée qu\'une seule fois','VAR remplace CALCULATE','VAR fonctionne uniquement dans les colonnes calculées'],
+ans:1,expl:'VAR stocke le résultat d\'une expression pour le réutiliser sans la recalculer. Améliore la lisibilité et évite les calculs redondants. Pattern : VAR x = expr RETURN calcul_utilisant_x.'},
+
+{id:31,cat:'DAX',level:'inter',type:'code',
+q:'Écris une mesure de CA cumulé depuis le début de l\'année (YTD), avec variante pour une clôture fiscale au 30 juin.',
+code:`CA YTD =
+CALCULATE(
+    [CA Total],
+    DATESYTD(dim_date[date])
+)
+
+-- Variante clôture fiscale au 30 juin
+CA YTD Fiscal =
+CALCULATE(
+    [CA Total],
+    DATESYTD(dim_date[date], "06/30")
+)`,
+expl:'DATESYTD retourne toutes les dates du début de l\'année jusqu\'à la date courante dans le contexte. Le 2ème argument optionnel définit la date de clôture fiscale.'},
+
+// ─── DAX AVANCÉ ───
+{id:32,cat:'DAX',level:'advanced',type:'qcm',
+q:'Qu\'est-ce que le contexte de filtre vs le contexte de ligne en DAX ?',
+opts:['Synonymes','Le contexte de filtre vient des visuels/slicers. Le contexte de ligne itère ligne par ligne (colonnes calculées, SUMX...)','Le contexte de ligne est créé par CALCULATE','Le contexte de filtre ne s\'applique qu\'aux mesures'],
+ans:1,expl:'Contexte de filtre : créé par visuels, slicers, filtres — définit quelles lignes sont visibles. Contexte de ligne : itère sur chaque ligne (colonnes calculées, fonctions X). CALCULATE convertit le contexte de ligne en contexte de filtre.'},
+
+{id:33,cat:'DAX',level:'advanced',type:'code',
+q:'Écris une mesure qui calcule le CA des 3 derniers mois glissants par rapport à la date courante dans le contexte.',
+code:`CA 3 Mois Glissants =
+CALCULATE(
+    [CA Total],
+    DATESINPERIOD(
+        dim_date[date],
+        LASTDATE(dim_date[date]),
+        -3,
+        MONTH
+    )
+)`,
+expl:'DATESINPERIOD(colonne_date, date_départ, nb_intervalles, intervalle) retourne une table de dates. LASTDATE() retourne la dernière date dans le contexte actuel. -3 MONTH = 3 mois en arrière.'},
+
+{id:34,cat:'DAX',level:'advanced',type:'qcm',
+q:'Pourquoi SUMX est-il parfois préférable à SUM ?',
+opts:['SUMX est toujours plus rapide','SUMX permet d\'évaluer une expression ligne par ligne avant de sommer — utile pour des calculs complexes','SUM ne fonctionne pas sur les colonnes calculées','SUMX ignore les filtres'],
+ans:1,expl:'SUM(col) additionne une colonne directement. SUMX(table, expression) itère ligne par ligne, évalue l\'expression, puis somme. Ex : SUMX(ventes, ventes[qte] * RELATED(produits[prix])) pour un CA calculé ligne par ligne avec un prix issu d\'une table liée.'},
+
+{id:35,cat:'DAX',level:'advanced',type:'code',
+q:'Écris une mesure qui retourne le TOP 3 des produits par CA sous forme de texte concaténé.',
+code:`Top 3 Produits =
+VAR top3 =
+    TOPN(
+        3,
+        ALL(dim_produit[nom_produit]),
+        [CA Total],
+        DESC
+    )
+RETURN
+CONCATENATEX(
+    top3,
+    dim_produit[nom_produit],
+    ", ",
+    [CA Total],
+    DESC
+)`,
+expl:'TOPN retourne les N premières lignes d\'une table selon un critère. CONCATENATEX itère sur une table et concatène les valeurs d\'une colonne avec un séparateur. Combo puissant pour des tooltips ou des cartes de synthèse.'},
+
+// ─── MODÉLISATION ───
+{id:36,cat:'Modélisation',level:'basic',type:'qcm',
+q:'Qu\'est-ce qu\'un schéma en étoile (Star Schema) ?',
+opts:['Une grande table unique','Une table de faits centrale reliée à plusieurs tables de dimensions dénormalisées','Des tables reliées en chaîne','Un schéma propre à SQL Server'],
+ans:1,expl:'La table de faits contient les métriques mesurables (ventes, transactions). Les tables de dimension apportent le contexte (clients, produits, dates). C\'est le modèle recommandé pour Power BI et les data warehouses analytiques.'},
+
+{id:37,cat:'Modélisation',level:'basic',type:'qcm',
+q:'Quelle est la relation standard entre une table de faits et une table de dimension ?',
+opts:['One-to-One','Many-to-One (faits → dimension)','One-to-Many (dimension → faits)','Many-to-Many'],
+ans:1,expl:'Plusieurs lignes de faits peuvent pointer vers une même ligne de dimension (ex: plusieurs ventes pour un même client). Relation Many (faits) → One (dimension). Dans Power BI, la flèche de filtre va de la dimension vers les faits.'},
+
+{id:38,cat:'Modélisation',level:'basic',type:'qcm',
+q:'Qu\'est-ce qu\'une clé primaire et une clé étrangère ?',
+opts:['Ce sont des index','Clé primaire : identifiant unique d\'une table. Clé étrangère : référence la clé primaire d\'une autre table pour créer une relation','Clé primaire = première colonne d\'une table','Clé étrangère = valeur chiffrée'],
+ans:1,expl:'Clé primaire (PK) : identifie uniquement chaque ligne, valeur unique et non-nulle. Clé étrangère (FK) : référence la PK d\'une autre table, permet les jointures et garantit l\'intégrité référentielle.'},
+
+{id:39,cat:'Modélisation',level:'inter',type:'qcm',
+q:'Quelle est la différence entre schéma en étoile et schéma en flocon (Snowflake) ?',
+opts:['Aucune différence pratique','Le flocon normalise les dimensions en sous-tables — plus économe en stockage mais plus de jointures et moins performant en BI','Le flocon est toujours préférable en Power BI','L\'étoile ne supporte pas les dates'],
+ans:1,expl:'Flocon : dim_ville → dim_région → dim_pays (normalisé). Plus économe mais moins performant avec Vertipaq. Power BI préfère l\'étoile : dimensions dénormalisées, moins de jointures, meilleure compression.'},
+
+{id:40,cat:'Modélisation',level:'inter',type:'open',
+q:'Pourquoi est-il essentiel d\'avoir une table de dates dédiée dans Power BI ? Citez au moins 4 raisons.',
+expl:'1. Active les fonctions Time Intelligence DAX (SAMEPERIODLASTYEAR, DATESYTD, DATEADD...)\n2. Garantit une continuité des dates sans trous (jours sans vente inclus dans l\'axe)\n3. Permet des hiérarchies personnalisées (semaine fiscale, trimestre décalé, numéro de semaine ISO)\n4. Améliore les performances : Vertipaq optimise les filtres sur une table de dates marquée\n5. Centralise toute la logique temporelle en un seul endroit\n6. Évite les ambiguïtés quand plusieurs tables ont des colonnes de dates (relations actives/inactives)'},
+
+{id:41,cat:'Modélisation',level:'inter',type:'qcm',
+q:'Qu\'est-ce que la cardinalité d\'une relation ?',
+opts:['Le nombre de colonnes d\'une table','Le rapport entre le nombre de lignes correspondantes entre deux tables (1:1, 1:N, N:N)','La taille en Mo d\'une table','Le nombre de clés étrangères'],
+ans:1,expl:'Cardinalité : 1:1 (un client = un contrat), 1:N (un client = plusieurs commandes), N:N (plusieurs produits dans plusieurs commandes). Impacts sur les performances des jointures et la logique de filtrage en DAX.'},
+
+{id:42,cat:'Modélisation',level:'inter',type:'qcm',
+q:'Qu\'est-ce qu\'une "dimension à évolution lente" (Slowly Changing Dimension) ?',
+opts:['Une dimension qui ne change jamais','Une dimension dont les attributs peuvent changer dans le temps — plusieurs stratégies pour gérer l\'historique','Une dimension avec peu de lignes','Un type de table de faits'],
+ans:1,expl:'SCD Type 1 : écrasement (pas d\'historique). SCD Type 2 : nouvelle ligne avec dates de validité (historique complet, table plus grande). SCD Type 3 : colonne "ancienne valeur" (historique limité). Ex : un client change de segment ou de région.'},
+
+{id:43,cat:'Modélisation',level:'advanced',type:'open',
+q:'Qu\'est-ce qu\'une relation Many-to-Many ? Donnez un exemple concret et expliquez comment la gérer proprement.',
+expl:'Une relation N:N existe quand une ligne de A correspond à plusieurs de B, et vice-versa.\n\nExemple : un étudiant suit plusieurs cours, et un cours a plusieurs étudiants.\n\nGestion : introduire une table de jonction (bridge table) : etudiant_cours(id_etudiant, id_cours, date_inscription) qui transforme le N:N en deux relations 1:N.\n\nDans Power BI : la relation N:N native est supportée mais peut causer du double-comptage. La bridge table reste la meilleure pratique, surtout avec des filtres croisés et des mesures.'},
+
+{id:44,cat:'Modélisation',level:'advanced',type:'qcm',
+q:'Qu\'est-ce que la granularité d\'une table de faits et pourquoi est-elle critique ?',
+opts:['Le nombre de colonnes','Le niveau de détail de chaque ligne — ce que représente exactement une ligne de la table','La taille de la table en lignes','Le nombre de dimensions liées'],
+ans:1,expl:'Granularité fine (1 ligne = 1 transaction) : analyses très flexibles, volumes importants. Granularité grossière (1 ligne = total mensuel par produit) : moins flexible, plus compact. Une mauvaise granularité définie trop tard génère des refontes coûteuses.'},
+
+{id:45,cat:'Modélisation',level:'advanced',type:'open',
+q:'Expliquez la différence entre un Data Warehouse, un Data Lake et un Data Lakehouse. Quand utiliser chacun ?',
+expl:'Data Warehouse : données structurées, schéma défini à l\'écriture (schema-on-write), optimisé pour les requêtes analytiques SQL. Ex: Snowflake, BigQuery, Redshift. Idéal pour le reporting et le BI.\n\nData Lake : données brutes de toute nature, schéma défini à la lecture (schema-on-read), très scalable et économique. Ex: S3, Azure Data Lake. Idéal pour le ML, l\'exploration, l\'archivage brut.\n\nData Lakehouse : hybride moderne qui combine le stockage économique du Lake avec les capacités analytiques du Warehouse. Ex: Delta Lake, Databricks, Apache Iceberg. Tendance dominante actuelle.\n\nEn pratique : Data Lake pour l\'ingestion brute → transformations → Data Warehouse pour l\'analytique métier.'},
+
+// ─── PYTHON ───
+{id:46,cat:'Python',level:'basic',type:'qcm',
+q:'Comment afficher un résumé statistique d\'un DataFrame pandas (moyenne, min, max, etc.) ?',
+opts:['df.stats()','df.describe()','df.summary()','df.info()'],ans:1,
+expl:'df.describe() retourne les statistiques descriptives des colonnes numériques (count, mean, std, min, quartiles, max). df.info() donne les types et les non-null counts. df.head(n) pour les premières lignes.'},
+
+{id:47,cat:'Python',level:'basic',type:'qcm',
+q:'Quelle est la différence entre loc et iloc dans pandas ?',
+opts:['Aucune différence','loc utilise les labels (noms d\'index/colonnes), iloc utilise les positions entières','iloc est toujours plus rapide','loc ne fonctionne pas avec des index numériques'],
+ans:1,expl:'loc["label_a":"label_b"] sélectionne par nom, inclusif des deux bornes. iloc[0:100] sélectionne par position, exclusif de la borne droite. Utiliser loc pour des données temporelles indexées par date.'},
+
+{id:48,cat:'Python',level:'basic',type:'code',
+q:'Calcule le CA total par catégorie de produit, trié par CA décroissant. DataFrame df avec colonnes "categorie" et "montant".',
+code:`ca = (
+    df.groupby('categorie')['montant']
+    .sum()
+    .reset_index()
+    .rename(columns={'montant': 'ca_total'})
+    .sort_values('ca_total', ascending=False)
+)
+print(ca)`,
+expl:'groupby().sum() est la méthode standard. reset_index() retransforme l\'index en colonne. Chaîner les méthodes avec () améliore la lisibilité.'},
+
+{id:49,cat:'Python',level:'basic',type:'qcm',
+q:'Comment renommer des colonnes dans un DataFrame pandas ?',
+opts:['df.columns.rename()','df.rename(columns={"ancien":"nouveau"})','df.set_columns()','df.column_names()'],ans:1,
+expl:'df.rename(columns={"ancien":"nouveau"}, inplace=True) renomme une ou plusieurs colonnes. df.columns = ["col1","col2",...] renomme toutes les colonnes en une fois. inplace=True modifie le DataFrame directement.'},
+
+{id:50,cat:'Python',level:'inter',type:'code',
+q:'Détecte et affiche le pourcentage de valeurs manquantes par colonne, trié par % décroissant.',
+code:`missing = (
+    df.isnull()
+    .sum()
+    .div(len(df))
+    .mul(100)
+    .round(2)
+    .sort_values(ascending=False)
+)
+missing = missing[missing > 0]
+print(missing.to_frame('pct_manquant').to_string())`,
+expl:'isnull() crée un masque booléen. sum() compte les True. div(len(df)) normalise. Filtrer > 0 n\'affiche que les colonnes concernées. to_frame() pour un affichage propre.'},
+
+{id:51,cat:'Python',level:'inter',type:'qcm',
+q:'Quelle méthode pandas fusionne deux DataFrames comme un JOIN SQL ?',
+opts:['df.append()','pd.merge()','df.join_sql()','df.concat()'],ans:1,
+expl:'pd.merge(df1, df2, on="id", how="inner/left/right/outer") reproduit les JOIN SQL. df.concat([df1,df2], axis=0) empile verticalement. df.concat([df1,df2], axis=1) joint horizontalement (par index).'},
+
+{id:52,cat:'Python',level:'inter',type:'code',
+q:'Crée une colonne "segment" : "Grand" si CA > 10000, "Moyen" si CA > 1000, sinon "Petit".',
+code:`import numpy as np
+
+conditions = [df['CA'] > 10000, df['CA'] > 1000]
+choix = ['Grand', 'Moyen']
+df['segment'] = np.select(conditions, choix, default='Petit')`,
+expl:'np.select() est vectorisé — beaucoup plus rapide que apply() sur de grands volumes. Les conditions sont évaluées dans l\'ordre, la première vraie gagne. apply(lambda) est lisible mais lent.'},
+
+{id:53,cat:'Python',level:'inter',type:'qcm',
+q:'Quelle est la différence entre apply() et map() dans pandas ?',
+opts:['Synonymes','apply() s\'applique à des lignes ou colonnes entières (axis=0/1), map() s\'applique élément par élément sur une Series','map() est plus rapide dans tous les cas','apply() ne fonctionne que sur les DataFrames'],
+ans:1,expl:'map() : élément par élément sur une Series. apply() : sur une Series (element-wise) ou DataFrame (par ligne/colonne). applymap()/map() (pandas 2.1+) : element-wise sur un DataFrame. Préférer les opérations vectorisées quand possible.'},
+
+{id:54,cat:'Python',level:'inter',type:'code',
+q:'Pivote un DataFrame de format long vers format large. df avec colonnes : date, produit, ventes.',
+code:`# Long vers large (pivot)
+df_large = df.pivot_table(
+    index='date',
+    columns='produit',
+    values='ventes',
+    aggfunc='sum',
+    fill_value=0
+)
+
+# Large vers long (melt)
+df_long = df_large.reset_index().melt(
+    id_vars='date',
+    var_name='produit',
+    value_name='ventes'
+)`,
+expl:'pivot_table() transforme le format long (une ligne par observation) en large (une colonne par catégorie). melt() fait l\'inverse. fill_value=0 remplace les NaN par 0.'},
+
+{id:55,cat:'Python',level:'advanced',type:'code',
+q:'Détecte les outliers dans une colonne "valeur" avec la méthode IQR et crée une colonne booléenne "is_outlier".',
+code:`Q1 = df['valeur'].quantile(0.25)
+Q3 = df['valeur'].quantile(0.75)
+IQR = Q3 - Q1
+
+borne_basse = Q1 - 1.5 * IQR
+borne_haute = Q3 + 1.5 * IQR
+
+df['is_outlier'] = (
+    (df['valeur'] < borne_basse) |
+    (df['valeur'] > borne_haute)
+)
+
+print(f"Outliers : {df['is_outlier'].sum()} "
+      f"({df['is_outlier'].mean()*100:.1f}%)")`,
+expl:'La méthode IQR est robuste aux distributions non normales. Seuil standard : 1.5 * IQR. Alternative : z-score pour distributions normales (|z| > 3). Créer une colonne booléenne permet de filtrer facilement ensuite.'},
+
+{id:56,cat:'Python',level:'advanced',type:'qcm',
+q:'Qu\'est-ce que la vectorisation dans pandas et pourquoi est-elle critique ?',
+opts:['Un type de graphique vectoriel','Appliquer des opérations sur des tableaux entiers en C sans boucle Python — 10x à 100x plus rapide','Une méthode de compression de données','Un synonyme de apply()'],
+ans:1,expl:'Pandas/NumPy délèguent les calculs à des bibliothèques C optimisées. df["col"] * 2 traite tout le tableau d\'un coup en C. Une boucle Python itère ligne par ligne avec le surcoût de l\'interpréteur. Règle : jamais de iterrows() sur de grands volumes.'},
+
+{id:57,cat:'Python',level:'advanced',type:'code',
+q:'Calcule une moyenne mobile sur 7 jours pour une colonne "valeur" ordonnée par date.',
+code:`df = df.sort_values('date')
+
+df['ma_7j'] = (
+    df['valeur']
+    .rolling(window=7, min_periods=1)
+    .mean()
+    .round(2)
+)`,
+expl:'rolling(window=n) crée une fenêtre glissante. min_periods=1 évite les NaN pour les premières lignes qui ont moins de n valeurs. .mean(), .sum(), .std()... s\'appliquent sur la fenêtre. Toujours trier par date avant.'},
+
+// ─── THÉORIE ───
+{id:58,cat:'Théorie',level:'basic',type:'qcm',
+q:'Qu\'est-ce qu\'un KPI ?',
+opts:['Un type de graphique','Key Performance Indicator — métrique clé quantifiable pour mesurer la performance vs un objectif','Un format de fichier de données','Un langage de requête'],
+ans:1,expl:'Un KPI est une métrique liée à un objectif précis. Il doit être SMART : Spécifique, Mesurable, Atteignable, Réaliste, Temporel. Ex: taux de conversion, CA mensuel, NPS, taux de churn.'},
+
+{id:59,cat:'Théorie',level:'basic',type:'qcm',
+q:'Qu\'est-ce que l\'ETL et comment diffère-t-il de l\'ELT ?',
+opts:['Synonymes','ETL : transformer avant de charger (classique). ELT : charger brut puis transformer dans le warehouse (moderne)','ELT est toujours plus lent','ETL ne s\'utilise qu\'avec SQL'],
+ans:1,expl:'ETL (classique) : Extract → Transform → Load. Transformation dans un outil externe avant chargement. ELT (moderne) : Extract → Load → Transform. On charge les données brutes dans le warehouse, puis on transforme avec SQL/dbt. ELT tire parti de la puissance de calcul des warehouses cloud.'},
+
+{id:60,cat:'Théorie',level:'basic',type:'qcm',
+q:'Quelle est la différence entre données structurées, semi-structurées et non structurées ?',
+opts:['Aucune différence pratique','Structurées : schéma fixe (SQL, CSV). Semi-structurées : organisation partielle (JSON, XML). Non structurées : sans format (texte, image, vidéo)','Non structurées = données incorrectes','Structurées = uniquement des nombres'],
+ans:1,expl:'Structurées (~20% des données mondiales) : facilement interrogeables. Semi-structurées : JSON, XML, logs. Non structurées (~80%) : emails, images, vidéos, PDFs. D\'où l\'essor du NLP, du ML et des data lakes.'},
+
+{id:61,cat:'Théorie',level:'basic',type:'qcm',
+q:'Qu\'est-ce qu\'un data pipeline ?',
+opts:['Un type de graphique en cascade','Une séquence automatisée d\'étapes pour collecter, transformer et livrer des données d\'une source vers une destination','Un outil de visualisation','Un type de base de données'],
+ans:1,expl:'Un pipeline de données orchestre : ingestion (API, BDD, fichiers) → transformation (nettoyage, enrichissement) → chargement (warehouse, lake) → disponibilité (BI, ML). Outils : Apache Airflow, dbt, Spark, Azure Data Factory.'},
+
+{id:62,cat:'Théorie',level:'inter',type:'open',
+q:'Qu\'est-ce que la qualité des données et ses 5 dimensions principales ?',
+expl:'La qualité des données mesure l\'aptitude des données à satisfaire un usage.\n\n5 dimensions principales :\n1. Exactitude : les données reflètent fidèlement la réalité\n2. Complétude : absence de valeurs manquantes critiques\n3. Cohérence : même valeur dans différentes sources/tables\n4. Actualité : fraîcheur adaptée à l\'usage (données J-1 vs temps réel)\n5. Unicité : pas de doublons non souhaités\n\nMauvaise qualité → mauvaises décisions. Règle : "Garbage in, garbage out".'},
+
+{id:63,cat:'Théorie',level:'inter',type:'qcm',
+q:'Qu\'est-ce que la CSRD et quel impact a-t-elle sur les besoins en données des entreprises ?',
+opts:['Un logiciel de comptabilité','Une directive EU obligeant les entreprises à publier un reporting de durabilité structuré (ESG), générant d\'importants besoins en données','Un standard de cybersécurité','Un format de fichier de données'],
+ans:1,expl:'CSRD (Corporate Sustainability Reporting Directive) : oblige les entreprises EU (250+ salariés) à publier un reporting ESG détaillé selon les normes ESRS. Impact data : collecte des scopes 1/2/3 GES, indicateurs sociaux, gouvernance, format XBRL. Forte demande en Data Analysts spécialisés.'},
+
+{id:64,cat:'Théorie',level:'inter',type:'open',
+q:'Citez 3 types de biais dans les données et leurs conséquences sur l\'analyse.',
+expl:'1. Biais de sélection : l\'échantillon ne représente pas la population réelle. Ex : analyser uniquement les clients actifs → surestimer la satisfaction, oublier les churned.\n\n2. Biais de confirmation : chercher des données qui confirment une hypothèse préexistante plutôt que de la tester. → Conclusions orientées, décisions biaisées.\n\n3. Biais de survivant : n\'analyser que les entités qui "ont survécu". Ex : étudier seulement les startups existantes pour comprendre le succès → ignorer les raisons d\'échec.\n\nConséquences : recommandations erronées, modèles ML discriminatoires, décisions stratégiques mal informées.'},
+
+{id:65,cat:'Théorie',level:'inter',type:'qcm',
+q:'Quelle est la différence entre corrélation et causalité ?',
+opts:['Synonymes en statistique','La corrélation mesure une relation statistique entre deux variables. La causalité prouve qu\'une variable cause l\'autre','La causalité est plus facile à prouver','Une forte corrélation implique toujours la causalité'],
+ans:1,expl:'Corrélation : deux variables varient ensemble (r entre -1 et 1). Causalité : l\'une provoque l\'autre. Ex célèbre : ventes de glaces et noyades sont corrélées (variable cachée : chaleur estivale). Prouver la causalité nécessite des A/B tests ou des méthodes économétriques (régression avec variables instrumentales).'},
+
+{id:66,cat:'Théorie',level:'inter',type:'qcm',
+q:'Qu\'est-ce qu\'un A/B test et quand l\'utiliser ?',
+opts:['Un type de graphique','Une expérience contrôlée qui compare deux variantes (A et B) pour mesurer l\'impact causal d\'un changement','Un test de performance de base de données','Un test de qualité des données'],
+ans:1,expl:'Un A/B test divise aléatoirement une population en deux groupes : groupe A (contrôle) et groupe B (variante). On mesure l\'impact de la variante sur une métrique cible. Prérequis : randomisation correcte, taille d\'échantillon suffisante, durée adéquate, une seule variable modifiée.'},
+
+{id:67,cat:'Théorie',level:'advanced',type:'open',
+q:'Expliquez la différence entre rapport, dashboard et analyse ad hoc. Quand utiliser chacun ?',
+expl:'Rapport : document structuré, périodique, métriques fixes et prédéfinies. Destiné à des parties prenantes précises. Ex : rapport mensuel des ventes. → Quand : suivi régulier de KPIs stables.\n\nDashboard : interface interactive, mise à jour automatique, exploration autonome par les métiers. Ex : Power BI pour les managers. → Quand : monitoring en continu, self-service BI.\n\nAnalyse ad hoc : investigation ponctuelle pour répondre à une question spécifique non prévue. Flexible, non répétitive. Ex : comprendre une chute des ventes. → Quand : anomalie, décision stratégique urgente.\n\nErreur courante : créer un dashboard pour une question ponctuelle, ou faire une analyse ad hoc à répétition au lieu d\'automatiser.'},
+
+{id:68,cat:'Théorie',level:'advanced',type:'qcm',
+q:'Qu\'est-ce que le principe "Data Mesh" ?',
+opts:['Un outil ETL','Une approche décentralisée où chaque domaine métier est responsable de ses propres données comme des "produits data"','Un type de schéma de base de données','Un standard de visualisation'],
+ans:1,expl:'Data Mesh (Zhamak Dehghani, 2019) : 4 principes. 1) Ownership décentralisé par domaine. 2) Données comme produits (qualité, documentation, SLA). 3) Infrastructure self-serve partagée. 4) Gouvernance fédérée. Répond aux limites des data lakes/warehouses centralisés sur de grandes organisations.'},
+
+{id:69,cat:'Théorie',level:'advanced',type:'open',
+q:'Qu\'est-ce que la gouvernance des données (Data Governance) et pourquoi est-elle critique ?',
+expl:'La gouvernance des données est l\'ensemble des politiques, processus et responsabilités qui garantissent la qualité, la sécurité et la conformité des données dans une organisation.\n\nComposantes clés :\n- Data Catalog : inventaire des données disponibles et leur définition\n- Data Lineage : traçabilité de l\'origine et des transformations des données\n- Data Stewardship : responsables désignés par domaine de données\n- Gestion des accès : qui peut voir et modifier quelles données\n- Conformité réglementaire : RGPD, CSRD, secteur financier...\n\nSans gouvernance : données contradictoires entre équipes, risques légaux, perte de confiance dans les analyses.'},
+
+{id:70,cat:'Théorie',level:'advanced',type:'qcm',
+q:'Qu\'est-ce que le RGPD et ses principales implications pour un Data Analyst ?',
+opts:['Un outil de visualisation','Règlement Général sur la Protection des Données — encadre le traitement des données personnelles en EU et impose des obligations sur la collecte, le stockage et l\'analyse','Un format de base de données','Un standard de sécurité informatique'],
+ans:1,expl:'RGPD : consentement requis, droit à l\'effacement, pseudonymisation des données sensibles, notification des violations. Pour un Data Analyst : ne jamais exposer les données personnelles brutes dans les rapports, anonymiser les exports, limiter la rétention des données, documenter les traitements dans le registre.'}
+];
+
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+let F={cat:'all',level:'all',type:'all',status:'all'};
+let answered={};   // qid → {type:'qcm'|'other', correct:bool|null}
+let qcmScore=0, qcmAnswered=0;
+
+function getFiltered(){
+  return Q.filter(q=>{
+    if(F.cat!=='all'&&q.cat!==F.cat)return false;
+    if(F.level!=='all'&&q.level!==F.level)return false;
+    if(F.type!=='all'&&q.type!==F.type)return false;
+    const st=answered[q.id];
+    if(F.status==='unanswered'&&st!==undefined)return false;
+    if(F.status==='correct'&&(!st||st.correct!==true))return false;
+    if(F.status==='wrong'&&(!st||st.correct!==false))return false;
+    return true;
+  });
+}
+
+function setF(dim,val,el){
+  F[dim]=val;
+  const scope=dim==='cat'?'#catTabs .tab':`.filter-btn[onclick*="'${dim}'"]`;
+  document.querySelectorAll(scope).forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  render();
+}
+
+// ══════════════════════════════════════════
+// RENDER
+// ══════════════════════════════════════════
+function render(){
+  const list=document.getElementById('qList');
+  const filtered=getFiltered();
+  list.innerHTML='';
+
+  if(!filtered.length){
+    list.innerHTML='<div class="empty"><div class="empty-icon">∅</div><p>Aucune question pour ces filtres.</p></div>';
+    updateStats(filtered);return;
+  }
+
+  filtered.forEach((q,i)=>{
+    const card=document.createElement('div');
+    card.className='q-card'+(answered[q.id]?' answered-card':'');
+    card.style.animationDelay=Math.min(i*0.025,0.35)+'s';
+
+    const lvlC={basic:'b-basic',inter:'b-inter',advanced:'b-adv'}[q.level];
+    const lvlL={basic:'Basique',inter:'Intermédiaire',advanced:'Avancé'}[q.level];
+    const typL={qcm:'QCM',code:'Code',open:'Ouverte'}[q.type];
+    const st=answered[q.id];
+    const doneTag=st?`<span class="badge b-done" style="margin-left:auto">${st.correct===true?'✓':st.correct===false?'✗':'✓'}</span>`:'<span class="q-num">#'+String(q.id).padStart(2,'0')+'</span>';
+
+    // Table preview
+    const tpHtml=q.tables?tablePreview(q.tables):'';
+
+    let body='';
+    if(q.type==='qcm'){
+      const opts=q.opts.map((o,i)=>{
+        let cls='opt';
+        if(st!==undefined){cls+=' disabled';if(i===q.ans)cls+=' correct';else if(st.chosen===i)cls+=' wrong';}
+        return`<div class="${cls}" onclick="answerQCM(${q.id},${i})"><span class="opt-l">${['A','B','C','D'][i]}</span>${o}</div>`;
+      }).join('');
+      const fb=st?( st.correct?'<span class="feedback fb-ok">✓ Bonne réponse</span>':'<span class="feedback fb-ko">✗ Mauvaise réponse</span>' ):'';
+      body=`<p class="q-text">${q.q}</p>${tpHtml}<div class="options">${opts}</div><div class="btn-row">${fb}</div>
+        <div class="expl ${st?'show':''}" id="expl-${q.id}"><div class="expl-lbl">Explication</div><div class="expl-txt">${q.expl}</div></div>`;
+    }
+    if(q.type==='code'){
+      body=`<p class="q-text">${q.q}</p>${tpHtml}
+        <textarea class="code-input" id="code-${q.id}" placeholder="-- Écris ta requête ici..."></textarea>
+        <div class="btn-row"><button class="btn btn-dark" onclick="reveal(${q.id})">Voir la correction</button><button class="btn btn-out" onclick="clearTA('code-${q.id}')">Effacer</button></div>
+        <div class="expl ${st?'show':''}" id="expl-${q.id}"><div class="expl-lbl">Correction</div><code class="expl-code">${q.code}</code><div class="expl-txt" style="margin-top:8px">${q.expl}</div></div>`;
+    }
+    if(q.type==='open'){
+      body=`<p class="q-text">${q.q}</p>${tpHtml}
+        <textarea class="open-input" id="open-${q.id}" placeholder="Écris ta réponse ici..."></textarea>
+        <div class="btn-row"><button class="btn btn-dark" onclick="reveal(${q.id})">Voir les éléments de réponse</button></div>
+        <div class="expl ${st?'show':''}" id="expl-${q.id}"><div class="expl-lbl">Éléments de réponse</div><div class="expl-txt">${q.expl.replace(/\n/g,'<br>')}</div></div>`;
+    }
+
+    card.innerHTML=`
+      <div class="q-meta">
+        <span class="badge ${lvlC}">${lvlL}</span>
+        <span class="badge b-cat">${q.cat}</span>
+        <span class="badge b-type">${typL}</span>
+        ${doneTag}
+      </div>
+      <div class="q-body">${body}</div>`;
+    list.appendChild(card);
+  });
+  updateStats(filtered);
+}
+
+function answerQCM(qid,chosen){
+  if(answered[qid]!==undefined)return;
+  const q=Q.find(x=>x.id===qid);
+  const correct=chosen===q.ans;
+  answered[qid]={type:'qcm',correct,chosen};
+  if(correct)qcmScore++;
+  qcmAnswered++;
+  document.getElementById('scorePill').innerHTML=`QCM : <strong>${qcmScore} / ${qcmAnswered}</strong>`;
+  updateTabProgress();
+  render();
+}
+
+function reveal(qid){
+  if(!answered[qid])answered[qid]={type:'other',correct:null};
+  const el=document.getElementById('expl-'+qid);
+  if(el)el.classList.add('show');
+  updateTabProgress();
+  updateStats(getFiltered());
+}
+
+function clearTA(id){const el=document.getElementById(id);if(el)el.value='';}
+
+function updateTabProgress(){
+  const cats=['all','SQL','DAX','Modélisation','Python','Théorie'];
+  cats.forEach(cat=>{
+    const qs=cat==='all'?Q:Q.filter(q=>q.cat===cat);
+    const done=qs.filter(q=>answered[q.id]!==undefined).length;
+    const el=document.getElementById('tp-'+cat);
+    if(el)el.textContent=`${done}/${qs.length}`;
+  });
+}
+
+function updateStats(filtered){
+  const total=filtered.length;
+  const done=filtered.filter(q=>answered[q.id]!==undefined).length;
+  const pct=total?Math.round(done/total*100):0;
+  document.getElementById('sTotal').textContent=total;
+  document.getElementById('sAnswered').textContent=done;
+  document.getElementById('sScore').textContent=qcmAnswered?`${qcmScore}/${qcmAnswered}`:'—';
+  document.getElementById('sPct').textContent=pct+'%';
+  document.getElementById('progFill').style.width=pct+'%';
+  document.getElementById('progL').textContent=`${done} / ${total} répondu${done>1?'s':''}`;
+  document.getElementById('progR').textContent=pct+'%';
+}
+
+updateTabProgress();
+render();
+</script>
+</body>
+</html>
