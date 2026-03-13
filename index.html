@@ -853,7 +853,771 @@ expl:'La gouvernance des données est l\'ensemble des politiques, processus et r
 {id:70,cat:'Théorie',level:'advanced',type:'qcm',
 q:'Qu\'est-ce que le RGPD et ses principales implications pour un Data Analyst ?',
 opts:['Un outil de visualisation','Règlement Général sur la Protection des Données — encadre le traitement des données personnelles en EU et impose des obligations sur la collecte, le stockage et l\'analyse','Un format de base de données','Un standard de sécurité informatique'],
-ans:1,expl:'RGPD : consentement requis, droit à l\'effacement, pseudonymisation des données sensibles, notification des violations. Pour un Data Analyst : ne jamais exposer les données personnelles brutes dans les rapports, anonymiser les exports, limiter la rétention des données, documenter les traitements dans le registre.'}
+ans:1,expl:'RGPD : consentement requis, droit à l\'effacement, pseudonymisation des données sensibles, notification des violations. Pour un Data Analyst : ne jamais exposer les données personnelles brutes dans les rapports, anonymiser les exports, limiter la rétention des données, documenter les traitements dans le registre.'},
+
+// ─── NOUVELLES QUESTIONS ───
+
+// ─── SQL BASIQUE (+4) ───
+{id:71,cat:'SQL',level:'basic',type:'qcm',
+q:'Quelle est la différence entre WHERE et ON dans une requête avec JOIN ?',
+opts:['Synonymes','ON définit la condition de jointure entre les tables, WHERE filtre les lignes après la jointure','WHERE est plus rapide que ON','ON ne fonctionne qu\'avec INNER JOIN'],
+ans:1,
+expl:'ON est utilisé pour définir comment les tables sont jointes (condition de correspondance). WHERE filtre ensuite les lignes du résultat. Dans un LEFT JOIN, mettre une condition dans WHERE plutôt que dans ON peut transformer le LEFT JOIN en INNER JOIN.'},
+
+{id:72,cat:'SQL',level:'basic',type:'qcm',
+q:'Que fait la fonction COALESCE() ?',
+opts:['Fusionne deux tables','Retourne la première valeur non-NULL parmi ses arguments','Compte les valeurs non-NULL','Convertit un type de données'],
+ans:1,
+expl:'COALESCE(val1, val2, val3) retourne la première valeur non-NULL. Très utile pour remplacer les NULL par une valeur par défaut : COALESCE(telephone, email, \'Inconnu\'). Équivalent à ISNULL() sur SQL Server ou NVL() sur Oracle.'},
+
+{id:73,cat:'SQL',level:'basic',type:'code',tables:['produits'],
+q:'Retourne tous les produits de la catégorie "Électronique" dont le prix est supérieur à 50€, triés par prix décroissant.',
+code:`SELECT
+    id_produit,
+    nom_produit,
+    prix
+FROM produits
+WHERE categorie = 'Électronique'
+  AND prix > 50
+ORDER BY prix DESC`,
+expl:'Plusieurs conditions dans le WHERE avec AND. ORDER BY DESC pour un tri décroissant. Bonne pratique : indenter les conditions pour la lisibilité.'},
+
+{id:74,cat:'SQL',level:'basic',type:'qcm',
+q:'Que retourne SELECT 1+1, UPPER(\'hello\'), ROUND(3.14159, 2) ?',
+opts:['Une erreur','2, HELLO, 3.14','2, hello, 3.14159','NULL, NULL, NULL'],
+ans:1,
+expl:'SQL peut exécuter des expressions directement : 1+1=2, UPPER() met en majuscules, ROUND(n, décimales) arrondit. Ces fonctions scalaires s\'appliquent ligne par ligne dans un SELECT.'},
+
+// ─── SQL INTERMEDIAIRE (+8) ───
+{id:75,cat:'SQL',level:'inter',type:'qcm',tables:['commandes'],
+q:'Qu\'est-ce qu\'une CTE récursive et à quoi sert-elle ?',
+opts:['Une CTE qui s\'appelle elle-même pour traiter des structures hiérarchiques','Une CTE avec plusieurs sous-requêtes','Une CTE qui boucle sur toutes les tables','Une CTE avec GROUP BY'],
+ans:0,
+expl:'Une CTE récursive (WITH RECURSIVE) s\'appelle elle-même pour parcourir des structures hiérarchiques : organigrammes, catégories imbriquées, graphes. Elle a une partie d\'ancrage (cas de base) et une partie récursive. À utiliser avec précaution — toujours ajouter une condition d\'arrêt.'},
+
+{id:76,cat:'SQL',level:'inter',type:'code',tables:['ventes','produits'],
+q:'Retourne pour chaque catégorie de produit : le nombre de ventes, le CA total et le panier moyen.',
+code:`SELECT
+    p.categorie,
+    COUNT(v.id_vente)           AS nb_ventes,
+    SUM(v.quantite * v.prix_unitaire) AS ca_total,
+    ROUND(
+        SUM(v.quantite * v.prix_unitaire) / COUNT(v.id_vente),
+        2
+    )                           AS panier_moyen
+FROM ventes v
+INNER JOIN produits p ON p.id_produit = v.id_produit
+GROUP BY p.categorie
+ORDER BY ca_total DESC`,
+expl:'On joint ventes et produits pour accéder à la catégorie. Le panier moyen = CA total / nombre de ventes. ROUND(x, 2) pour 2 décimales. GROUP BY sur la colonne de la dimension.'},
+
+{id:77,cat:'SQL',level:'inter',type:'qcm',tables:['logs'],
+q:'Que fait la fonction DENSE_RANK() et en quoi diffère-t-elle de RANK() ?',
+opts:['Synonymes','RANK() laisse des trous dans la numérotation en cas d\'ex-aequo. DENSE_RANK() ne laisse pas de trous','DENSE_RANK() est plus lent','RANK() ne fonctionne pas avec PARTITION BY'],
+ans:1,
+expl:'Exemple avec scores 100, 100, 90 :\nRANK() → 1, 1, 3 (saute le rang 2)\nDENSE_RANK() → 1, 1, 2 (pas de trou)\nROW_NUMBER() → 1, 2, 3 (unique, arbitraire pour les ex-aequo)\nChoisir selon le besoin métier.'},
+
+{id:78,cat:'SQL',level:'inter',type:'code',tables:['clients','commandes'],
+q:'Trouve les clients qui n\'ont jamais passé de commande (utilise deux méthodes différentes).',
+code:`-- Méthode 1 : LEFT JOIN + IS NULL
+SELECT c.id_client, c.nom
+FROM clients c
+LEFT JOIN commandes o ON o.id_client = c.id_client
+WHERE o.id_commande IS NULL
+
+-- Méthode 2 : NOT EXISTS
+SELECT c.id_client, c.nom
+FROM clients c
+WHERE NOT EXISTS (
+    SELECT 1 FROM commandes o
+    WHERE o.id_client = c.id_client
+)
+
+-- Méthode 3 : NOT IN (attention aux NULL)
+SELECT id_client, nom
+FROM clients
+WHERE id_client NOT IN (
+    SELECT DISTINCT id_client FROM commandes
+    WHERE id_client IS NOT NULL
+)`,
+expl:'LEFT JOIN + IS NULL et NOT EXISTS sont généralement les plus performants. NOT IN est risqué si la sous-requête peut retourner des NULL (NULL IN liste = NULL, pas FALSE). NOT EXISTS est souvent préféré pour sa sécurité.'},
+
+{id:79,cat:'SQL',level:'inter',type:'qcm',
+q:'Qu\'est-ce qu\'une vue (VIEW) en SQL ?',
+opts:['Une copie physique d\'une table','Une requête SQL sauvegardée et réutilisable comme une table virtuelle','Un type d\'index','Une procédure stockée'],
+ans:1,
+expl:'Une VIEW est une requête enregistrée qui se comporte comme une table. Elle ne stocke pas de données (sauf les vues matérialisées). Avantages : simplifier les requêtes complexes, masquer la complexité, contrôler les accès. CREATE VIEW ma_vue AS SELECT...'},
+
+{id:80,cat:'SQL',level:'inter',type:'code',tables:['transactions'],
+q:'Calcule pour chaque client la variation du montant entre chaque transaction et la précédente (delta).',
+code:`SELECT
+    id_client,
+    id_transaction,
+    date_transaction,
+    montant,
+    LAG(montant) OVER (
+        PARTITION BY id_client
+        ORDER BY date_transaction
+    ) AS montant_precedent,
+    montant - LAG(montant) OVER (
+        PARTITION BY id_client
+        ORDER BY date_transaction
+    ) AS delta
+FROM transactions
+ORDER BY id_client, date_transaction`,
+expl:'LAG() accède à la valeur de la ligne précédente dans la partition. La soustraction montant - LAG(montant) donne le delta. La première transaction de chaque client aura NULL comme montant_precedent et delta.'},
+
+{id:81,cat:'SQL',level:'inter',type:'qcm',tables:['commandes'],
+q:'Quelle est la différence entre une procédure stockée et une fonction en SQL ?',
+opts:['Synonymes','Une procédure peut modifier des données et n\'a pas de valeur de retour obligatoire. Une fonction retourne une valeur et s\'utilise dans un SELECT','Les fonctions sont plus rapides','Les procédures ne peuvent pas avoir de paramètres'],
+ans:1,
+expl:'Procédure (PROCEDURE) : peut insérer/modifier/supprimer des données, pas de valeur de retour obligatoire, s\'appelle avec EXEC/CALL. Fonction (FUNCTION) : retourne une valeur scalaire ou une table, s\'utilise dans un SELECT, ne peut généralement pas modifier des données.'},
+
+{id:82,cat:'SQL',level:'inter',type:'code',tables:['ventes','produits'],
+q:'Retourne le produit le plus vendu (en quantité) par catégorie.',
+code:`WITH ranked AS (
+    SELECT
+        p.categorie,
+        p.nom_produit,
+        SUM(v.quantite) AS total_quantite,
+        RANK() OVER (
+            PARTITION BY p.categorie
+            ORDER BY SUM(v.quantite) DESC
+        ) AS rk
+    FROM ventes v
+    INNER JOIN produits p ON p.id_produit = v.id_produit
+    GROUP BY p.categorie, p.nom_produit
+)
+SELECT categorie, nom_produit, total_quantite
+FROM ranked
+WHERE rk = 1`,
+expl:'Pattern classique : agrégation dans un CTE + window function pour le ranking + filtre WHERE rk = 1. RANK() plutôt que ROW_NUMBER() pour gérer les ex-aequo (deux produits à égalité seront tous les deux retournés).'},
+
+// ─── SQL AVANCÉ (+7) ───
+{id:83,cat:'SQL',level:'advanced',type:'qcm',
+q:'Qu\'est-ce qu\'un plan d\'exécution (EXPLAIN) et pourquoi est-il utile ?',
+opts:['Un commentaire dans le code SQL','Un rapport généré par le SGBD qui montre comment il va exécuter une requête — utile pour identifier les goulots d\'étranglement','Un type de procédure stockée','Un outil de visualisation'],
+ans:1,
+expl:'EXPLAIN (ou EXPLAIN ANALYZE sur PostgreSQL) affiche le plan d\'exécution : quels index sont utilisés, quelles jointures sont effectuées, combien de lignes sont estimées. Indispensable pour optimiser les requêtes lentes. Chercher les "Sequential Scan" sur de grandes tables — signe qu\'un index manque.'},
+
+{id:84,cat:'SQL',level:'advanced',type:'code',tables:['commandes','clients'],
+q:'Trouve les clients dont le montant total de commandes est supérieur à la moyenne de tous les clients.',
+code:`WITH client_totals AS (
+    SELECT
+        id_client,
+        SUM(montant) AS total
+    FROM commandes
+    GROUP BY id_client
+),
+avg_total AS (
+    SELECT AVG(total) AS moyenne
+    FROM client_totals
+)
+SELECT
+    c.nom,
+    ct.total,
+    ROUND(ct.total - at.moyenne, 2) AS ecart_moyenne
+FROM client_totals ct
+CROSS JOIN avg_total at
+INNER JOIN clients c ON c.id_client = ct.id_client
+WHERE ct.total > at.moyenne
+ORDER BY ct.total DESC`,
+expl:'CROSS JOIN avec une table d\'une seule ligne (avg_total) permet d\'accéder à la moyenne globale sans sous-requête corrélée. L\'écart à la moyenne donne une information supplémentaire utile.'},
+
+{id:85,cat:'SQL',level:'advanced',type:'qcm',
+q:'Qu\'est-ce que la normalisation d\'une base de données et ses formes normales ?',
+opts:['Un processus d\'optimisation des index','Un processus d\'organisation des données pour réduire la redondance et garantir l\'intégrité — 1NF, 2NF, 3NF sont les formes standard','Un type de sauvegarde','Un processus de compression'],
+ans:1,
+expl:'1NF : valeurs atomiques, pas de groupes répétés. 2NF : 1NF + chaque attribut dépend de toute la clé primaire. 3NF : 2NF + pas de dépendance transitive (A→B→C, B doit être dans sa propre table). En pratique, les data warehouses dénormalisent intentionnellement pour les performances analytiques.'},
+
+{id:86,cat:'SQL',level:'advanced',type:'code',tables:['logs'],
+q:'Analyse le funnel de conversion : pour chaque étape (view → click → purchase), calcule le nombre d\'utilisateurs et le taux de passage à l\'étape suivante.',
+code:`WITH funnel AS (
+    SELECT
+        action,
+        COUNT(DISTINCT user_id) AS nb_users
+    FROM logs
+    WHERE action IN ('view', 'click', 'purchase')
+    GROUP BY action
+),
+ordered AS (
+    SELECT
+        action,
+        nb_users,
+        CASE action
+            WHEN 'view' THEN 1
+            WHEN 'click' THEN 2
+            WHEN 'purchase' THEN 3
+        END AS etape
+    FROM funnel
+)
+SELECT
+    etape,
+    action,
+    nb_users,
+    ROUND(
+        nb_users * 100.0 /
+        FIRST_VALUE(nb_users) OVER (ORDER BY etape),
+        1
+    ) AS pct_vs_top
+FROM ordered
+ORDER BY etape`,
+expl:'FIRST_VALUE() OVER retourne la valeur de la première ligne de la fenêtre — ici le nb_users de l\'étape 1 (view). Diviser chaque étape par cette valeur donne le taux de conversion cumulé depuis le début du funnel.'},
+
+{id:87,cat:'SQL',level:'advanced',type:'qcm',
+q:'Qu\'est-ce qu\'une transaction SQL et que signifie ACID ?',
+opts:['Un type de requête SELECT','Un bloc d\'opérations traité comme une unité indivisible. ACID = Atomicité, Cohérence, Isolation, Durabilité','Un type de jointure','Un niveau d\'index'],
+ans:1,
+expl:'ACID garantit la fiabilité des transactions :\n- Atomicité : tout ou rien (COMMIT/ROLLBACK)\n- Cohérence : la BDD reste dans un état valide\n- Isolation : les transactions concurrentes ne s\'interfèrent pas\n- Durabilité : une transaction committée persiste même en cas de panne\nEssentiels pour les systèmes financiers et transactionnels.'},
+
+{id:88,cat:'SQL',level:'advanced',type:'code',tables:['commandes'],
+q:'Détecte les doublons dans la table commandes (même id_client, même montant, même date) et retourne uniquement les lignes en double.',
+code:`WITH duplicates AS (
+    SELECT
+        id_client,
+        montant,
+        date_commande,
+        COUNT(*) AS nb_occurrences,
+        MIN(id_commande) AS premier_id
+    FROM commandes
+    GROUP BY id_client, montant, date_commande
+    HAVING COUNT(*) > 1
+)
+SELECT c.*
+FROM commandes c
+INNER JOIN duplicates d
+    ON  c.id_client = d.id_client
+    AND c.montant = d.montant
+    AND c.date_commande = d.date_commande
+ORDER BY c.id_client, c.date_commande`,
+expl:'Le CTE identifie les groupes avec plus d\'une occurrence. La jointure récupère toutes les lignes correspondantes. Pour ne garder qu\'un exemplaire et supprimer les doublons : DELETE avec ROW_NUMBER() WHERE rn > 1.'},
+
+{id:89,cat:'SQL',level:'advanced',type:'qcm',
+q:'Quelle est la différence entre OLTP et OLAP ?',
+opts:['Synonymes','OLTP : optimisé pour les transactions courantes (INSERT/UPDATE rapides). OLAP : optimisé pour l\'analyse de grands volumes de données (agrégations, lectures)','OLAP est une version plus récente d\'OLTP','OLTP ne supporte pas les jointures'],
+ans:1,
+expl:'OLTP (Online Transaction Processing) : bases opérationnelles, normalisées, nombreuses petites transactions, ex: ERP, CRM. OLAP (Online Analytical Processing) : data warehouses, dénormalisés, grandes requêtes d\'agrégation, ex: Snowflake, BigQuery. Un Data Analyst travaille principalement avec des systèmes OLAP.'},
+
+// ─── DAX INTERMEDIAIRE (+5) ───
+{id:90,cat:'DAX',level:'inter',type:'qcm',
+q:'Qu\'est-ce que RELATED() et RELATEDTABLE() en DAX ?',
+opts:['Synonymes','RELATED() accède à une valeur d\'une table liée côté "one". RELATEDTABLE() retourne une table filtrée du côté "many"','RELATED() crée une nouvelle relation','RELATEDTABLE() ne fonctionne que dans les mesures'],
+ans:1,
+expl:'RELATED(dim_produit[categorie]) dans une colonne calculée de fact_ventes récupère la catégorie du produit lié. RELATEDTABLE(fact_ventes) dans une colonne de dim_client retourne toutes les ventes de ce client. RELATED = vers le "one", RELATEDTABLE = vers le "many".'},
+
+{id:91,cat:'DAX',level:'inter',type:'code',
+q:'Écris une mesure qui calcule le nombre de clients actifs (ayant au moins une vente) dans le contexte de filtre actuel.',
+code:`Clients Actifs =
+DISTINCTCOUNT(fact_ventes[id_client])
+
+-- Variante plus explicite
+Clients Actifs v2 =
+COUNTROWS(
+    DISTINCT(fact_ventes[id_client])
+)`,
+expl:'DISTINCTCOUNT est le raccourci de COUNT(DISTINCT col) en SQL. Il compte les valeurs uniques non-NULL dans le contexte de filtre. Très utile pour des métriques comme le nombre de clients, produits ou marchés actifs.'},
+
+{id:92,cat:'DAX',level:'inter',type:'qcm',
+q:'Qu\'est-ce que USERELATIONSHIP() et quand l\'utiliser ?',
+opts:['Crée une nouvelle relation','Active une relation inactive pour le calcul d\'une mesure spécifique — utile quand plusieurs relations existent entre deux tables','Supprime une relation','Synonyme de RELATED()'],
+ans:1,
+expl:'Exemple : fact_ventes a deux relations avec dim_date (date_commande et date_livraison). Une seule peut être active. CALCULATE([CA], USERELATIONSHIP(fact_ventes[date_livraison], dim_date[date])) utilise temporairement la relation inactive pour calculer le CA par date de livraison.'},
+
+{id:93,cat:'DAX',level:'inter',type:'code',
+q:'Écris une mesure qui calcule le CA des N derniers jours, où N est défini par un slicer "Période" connecté à une table de paramètres.',
+code:`-- Table de paramètres : dim_periode[nb_jours] (ex: 7, 30, 90)
+CA Derniers N Jours =
+VAR nb_jours = SELECTEDVALUE(dim_periode[nb_jours], 30)
+VAR date_max = MAX(dim_date[date])
+VAR date_min = date_max - nb_jours + 1
+RETURN
+CALCULATE(
+    [CA Total],
+    dim_date[date] >= date_min,
+    dim_date[date] <= date_max
+)`,
+expl:'SELECTEDVALUE retourne la valeur sélectionnée dans un slicer (30 par défaut si rien n\'est sélectionné). Les variables VAR calculent les bornes de la période. Le CALCULATE filtre la table de dates sur cette plage.'},
+
+{id:94,cat:'DAX',level:'inter',type:'qcm',
+q:'Pourquoi éviter les colonnes calculées pour les métriques agrégées en DAX ?',
+opts:['Les colonnes calculées sont interdites en DAX','Les colonnes calculées sont calculées ligne par ligne et stockées en mémoire — elles gonflent le modèle. Les mesures sont calculées à la demande et ne consomment pas de mémoire','Les colonnes calculées ne supportent pas SUM','Les mesures sont plus faciles à écrire'],
+ans:1,
+expl:'Une colonne calculée contenant SUM() retournerait le même total pour toutes les lignes (contexte de ligne, pas de filtre). Elle occupe de la RAM pour chaque ligne du modèle. Les agrégations doivent toujours être des mesures — elles respectent le contexte de filtre et ne consomment pas de mémoire au repos.'},
+
+// ─── DAX AVANCÉ (+6) ───
+{id:95,cat:'DAX',level:'advanced',type:'code',
+q:'Écris une mesure qui calcule le CA des clients qui ont acheté pour la première fois ce mois-ci (nouveaux clients).',
+code:`Nouveaux Clients CA =
+VAR current_period = VALUES(dim_date[date])
+RETURN
+CALCULATE(
+    [CA Total],
+    FILTER(
+        VALUES(fact_ventes[id_client]),
+        VAR first_purchase =
+            CALCULATE(
+                MIN(fact_ventes[date_vente]),
+                ALL(dim_date)
+            )
+        RETURN
+        first_purchase IN current_period
+    )
+)`,
+expl:'Pour chaque client, on calcule sa date de première commande toutes périodes confondues (ALL supprime le filtre date). Si cette première date est dans la période courante, le client est "nouveau". FILTER itère sur les clients distincts pour appliquer cette logique.'},
+
+{id:96,cat:'DAX',level:'advanced',type:'qcm',
+q:'Qu\'est-ce que KEEPFILTERS() et en quoi diffère-t-il du comportement standard de CALCULATE ?',
+opts:['Synonyme de ALL()','CALCULATE remplace les filtres existants. KEEPFILTERS() ajoute le nouveau filtre en intersection avec les filtres existants plutôt qu\'en remplacement','KEEPFILTERS supprime tous les filtres','KEEPFILTERS est plus lent'],
+ans:1,
+expl:'CALCULATE([CA], dim_produit[categorie]="Électronique") remplace le filtre catégorie existant. CALCULATE([CA], KEEPFILTERS(dim_produit[categorie]="Électronique")) intersecte avec le filtre existant. Si un slicer a déjà filtré "Vêtements", KEEPFILTERS retournera BLANK() car l\'intersection est vide.'},
+
+{id:97,cat:'DAX',level:'advanced',type:'code',
+q:'Crée une mesure de cohort analysis : CA des clients acquis chaque mois, suivi mois par mois.',
+code:`CA Cohorte =
+VAR mois_acquisition =
+    CALCULATE(
+        MIN(dim_date[annee_mois]),
+        ALL(dim_date),
+        FILTER(
+            VALUES(fact_ventes[id_client]),
+            CALCULATE(MIN(fact_ventes[date_vente])) =
+            MIN(fact_ventes[date_vente])
+        )
+    )
+VAR mois_courant = SELECTEDVALUE(dim_date[annee_mois])
+RETURN
+IF(
+    mois_courant >= mois_acquisition,
+    [CA Total],
+    BLANK()
+)`,
+expl:'La cohort analysis groupe les clients par mois d\'acquisition et suit leur comportement dans le temps. Cette mesure retourne le CA uniquement pour les mois postérieurs à l\'acquisition de la cohorte. Utilisée dans une matrice (cohorte en lignes, mois en colonnes).'},
+
+{id:98,cat:'DAX',level:'advanced',type:'qcm',
+q:'Qu\'est-ce que le principe de "measure branching" en DAX et pourquoi est-il une bonne pratique ?',
+opts:['Un type de relation entre tables','Construire des mesures complexes en réutilisant des mesures simples — améliore la lisibilité, la maintenance et les performances','Un type de fonction DAX','Une technique d\'optimisation des colonnes calculées'],
+ans:1,
+expl:'Exemple : [CA Total] → [CA Last Year] → [Croissance %]. Chaque mesure s\'appuie sur la précédente. Avantages : modifier [CA Total] propage automatiquement les changements. Plus lisible que tout ré-écrire dans chaque mesure. Performances : DAX met en cache les mesures de base.'},
+
+{id:99,cat:'DAX',level:'advanced',type:'code',
+q:'Écris une mesure qui calcule le percentile 90 du montant des ventes.',
+code:`P90 Montant Ventes =
+PERCENTILEXINC(
+    fact_ventes,
+    fact_ventes[montant],
+    0.9
+)
+
+-- Alternative avec PERCENTILEX.INC
+P90 v2 =
+PERCENTILEX.INC(
+    fact_ventes,
+    fact_ventes[montant],
+    0.9
+)`,
+expl:'PERCENTILEX.INC(table, expression, percentile) calcule le percentile d\'une expression sur une table. 0.9 = 90ème percentile. Très utile pour les analyses de distribution : identifier les outliers, les seuils de performance, les clients VIP.'},
+
+{id:100,cat:'DAX',level:'advanced',type:'qcm',
+q:'Comment optimiser les performances d\'un modèle Power BI qui est lent ?',
+opts:['Ajouter plus de visuels','Réduire la cardinalité des colonnes, supprimer les colonnes inutiles, préférer les mesures aux colonnes calculées, éviter les relations bidirectionnelles et les filtres croisés non nécessaires','Augmenter le nombre de relations','Utiliser plus de colonnes calculées'],
+ans:1,
+expl:'Optimisation Vertipaq : 1) Supprimer les colonnes jamais utilisées 2) Réduire la cardinalité (ex: arrondir les montants à 2 décimales) 3) Éviter les relations bidirectionnelles (doublent le travail de filtrage) 4) Préférer les mesures 5) Utiliser DAX Studio + VertiPaq Analyzer pour identifier les colonnes lourdes.'},
+
+// ─── MODÉLISATION (+10) ───
+{id:101,cat:'Modélisation',level:'basic',type:'qcm',
+q:'Qu\'est-ce qu\'une table de faits sans faits (Factless Fact Table) ?',
+opts:['Une table de faits vide','Une table de faits qui enregistre des événements ou des couvertures sans métriques numériques — l\'existence de la ligne est elle-même le fait','Une erreur de modélisation','Une table de dimension'],
+ans:1,
+expl:'Ex : une table d\'inscriptions à des cours (id_etudiant, id_cours, date_inscription) sans métriques numériques. Le fait c\'est l\'inscription elle-même. Utile pour les analyses de présence, d\'éligibilité, de couverture promotionnelle.'},
+
+{id:102,cat:'Modélisation',level:'basic',type:'qcm',
+q:'Qu\'est-ce qu\'une clé de substitution (Surrogate Key) et pourquoi l\'utiliser ?',
+opts:['La clé primaire naturelle du système source','Une clé artificielle générée par le data warehouse, indépendante du système source — garantit la stabilité même si les clés sources changent','Un type d\'index','Une clé composite'],
+ans:1,
+expl:'Les clés naturelles (ex: numéro client du CRM) peuvent changer, être réutilisées ou contenir des informations sensibles. La surrogate key (souvent un entier auto-incrémenté) est stable, anonyme et performante pour les jointures. Standard dans les data warehouses.'},
+
+{id:103,cat:'Modélisation',level:'inter',type:'qcm',
+q:'Qu\'est-ce qu\'une dimension conforme (Conformed Dimension) ?',
+opts:['Une dimension sans NULL','Une dimension partagée entre plusieurs tables de faits et data marts — garantit la cohérence des analyses cross-sujets','Une dimension avec une seule colonne','Une dimension qui ne change jamais'],
+ans:1,
+expl:'Ex : dim_date partagée entre fact_ventes, fact_livraisons et fact_stocks. Permet de combiner les analyses : "ventes vs livraisons par mois" fonctionne car elles partagent la même dim_date. Sans dimension conforme, les analyses cross-sujets sont impossibles ou incohérentes.'},
+
+{id:104,cat:'Modélisation',level:'inter',type:'qcm',
+q:'Quelle est la différence entre un data mart et un data warehouse ?',
+opts:['Synonymes','Un data warehouse couvre toute l\'entreprise. Un data mart est un sous-ensemble orienté vers un département ou un sujet spécifique','Un data mart est toujours plus grand','Un data warehouse ne supporte pas SQL'],
+ans:1,
+expl:'Data Warehouse (DW) : source unique de vérité pour toute l\'organisation, intègre toutes les données. Data Mart : vue spécialisée pour un département (ventes, finance, RH), souvent construite sur le DW. Les data marts facilitent l\'accès aux données pour des utilisateurs métiers spécifiques.'},
+
+{id:105,cat:'Modélisation',level:'inter',type:'open',
+q:'Expliquez les différentes stratégies de chargement de données (Full Load vs Incremental Load). Quand utiliser chacune ?',
+expl:'Full Load (chargement complet) : supprime et recharge toutes les données à chaque exécution. Simple à implémenter, garantit la cohérence. Problème : lent et coûteux sur de grands volumes.\n\nIncremental Load (chargement incrémental) : ne charge que les données nouvelles ou modifiées depuis le dernier chargement. Nécessite une colonne de timestamp ou un mécanisme de change data capture (CDC). Beaucoup plus performant sur de grands volumes.\n\nUpsert (Insert + Update) : insère les nouvelles lignes et met à jour les existantes. Pattern MERGE en SQL.\n\nChoix : Full Load pour les petites tables de référence. Incremental pour les grandes tables de faits.'},
+
+{id:106,cat:'Modélisation',level:'inter',type:'qcm',
+q:'Qu\'est-ce que le Change Data Capture (CDC) ?',
+opts:['Un type de sauvegarde','Un mécanisme qui capture automatiquement les insertions, modifications et suppressions dans une base source pour les propager vers le data warehouse','Un type de contrainte SQL','Un outil de visualisation'],
+ans:1,
+expl:'Le CDC lit les logs de transaction de la base source pour détecter les changements en temps quasi-réel, sans impact sur les performances de la source. Méthodes : lecture des logs binaires (Debezium), triggers, colonnes updated_at. Essentiel pour les pipelines de streaming et les data warehouses à faible latence.'},
+
+{id:107,cat:'Modélisation',level:'advanced',type:'open',
+q:'Qu\'est-ce que dbt (data build tool) et quel problème résout-il ?',
+expl:'dbt est un outil de transformation de données qui applique les bonnes pratiques du développement logiciel au data engineering.\n\nProblème résolu : les transformations SQL étaient souvent des scripts non versionnés, non testés, difficiles à maintenir.\n\ndbt apporte :\n- Modularité : les transformations SQL sont organisées en modèles réutilisables\n- Tests automatiques : vérification de la qualité des données (unicité, non-null, valeurs attendues)\n- Documentation : générée automatiquement depuis le code\n- Lineage : visualisation des dépendances entre modèles\n- Versioning : compatible Git\n\nPattern : dbt s\'occupe du T de l\'ELT. Les données sont déjà dans le warehouse, dbt les transforme en SQL.'},
+
+{id:108,cat:'Modélisation',level:'advanced',type:'qcm',
+q:'Qu\'est-ce que le principe de "Single Source of Truth" (SSOT) ?',
+opts:['Un type de base de données','Le principe selon lequel chaque donnée a une source canonique unique et authoritative — évite les incohérences entre systèmes','Un outil de gouvernance','Un type de backup'],
+ans:1,
+expl:'Sans SSOT : le CA dans le CRM diffère du CA dans l\'ERP diffère du CA dans Excel du commercial. Avec SSOT : le data warehouse est la référence unique, tous les rapports s\'y connectent. Implique une gouvernance forte : définitions communes des métriques, processus de certification des données.'},
+
+{id:109,cat:'Modélisation',level:'advanced',type:'qcm',
+q:'Qu\'est-ce qu\'Apache Spark et quand l\'utiliser vs SQL classique ?',
+opts:['Un outil de visualisation','Un framework de traitement distribué en mémoire — utile pour les volumes massifs (Big Data) que SQL classique ne peut pas traiter efficacement','Un type de base de données relationnelle','Un concurrent de Power BI'],
+ans:1,
+expl:'Spark traite les données en parallèle sur un cluster de machines. Utiliser Spark quand : volumes en téraoctets+, transformations complexes (ML, NLP), données non structurées, streaming. SQL classique suffit pour la plupart des analyses BI sur des warehouses cloud modernes (BigQuery, Snowflake gèrent plusieurs téraoctets efficacement).'},
+
+{id:110,cat:'Modélisation',level:'advanced',type:'open',
+q:'Expliquez les concepts de partitionnement et de clustering dans un data warehouse cloud (ex: BigQuery). Pourquoi sont-ils importants ?',
+expl:'Partitionnement : divise une table en segments selon une colonne (souvent la date). Une requête avec WHERE date = "2024-01-01" ne scanne que la partition de ce jour, pas toute la table. Réduit drastiquement les coûts et améliore les performances.\n\nClustering : organise les données au sein d\'une partition selon les valeurs de colonnes choisies (ex: categorie, region). Les données similaires sont physiquement proches — les filtres et agrégations sur ces colonnes sont plus rapides.\n\nBonne pratique BigQuery : partitionner par date d\'ingestion ou date métier + clusterer par les colonnes les plus filtrées. Peut réduire les coûts de 90%+ sur de grands volumes.'},
+
+// ─── PYTHON (+13) ───
+{id:111,cat:'Python',level:'basic',type:'qcm',
+q:'Comment supprimer les doublons dans un DataFrame pandas ?',
+opts:['df.remove_duplicates()','df.drop_duplicates()','df.unique()','df.deduplicate()'],
+ans:1,
+expl:'df.drop_duplicates() supprime les lignes entièrement dupliquées. df.drop_duplicates(subset=["col1","col2"]) considère uniquement ces colonnes. df.drop_duplicates(keep="last") garde la dernière occurrence. df.duplicated() retourne un masque booléen des doublons.'},
+
+{id:112,cat:'Python',level:'basic',type:'code',
+q:'Filtre un DataFrame pour ne garder que les lignes où la colonne "age" est entre 25 et 45 ans (inclus).',
+code:`# Méthode 1 — conditions booléennes
+df_filtered = df[(df['age'] >= 25) & (df['age'] <= 45)]
+
+# Méthode 2 — between (inclusif des deux bornes)
+df_filtered = df[df['age'].between(25, 45)]
+
+# Méthode 3 — query (plus lisible)
+df_filtered = df.query('25 <= age <= 45')`,
+expl:'between(a, b) est inclusif des deux bornes par défaut. query() accepte une expression Python en chaîne — très lisible. Attention avec les conditions booléennes : utiliser & (et) et | (ou), jamais and/or Python (ils opèrent sur des scalaires).'},
+
+{id:113,cat:'Python',level:'basic',type:'qcm',
+q:'Comment convertir une colonne de chaînes en type datetime dans pandas ?',
+opts:['df["date"].to_datetime()','pd.to_datetime(df["date"])','df["date"].astype("datetime")','df["date"].parse_dates()'],
+ans:1,
+expl:'pd.to_datetime(df["col"], format="%Y-%m-%d") convertit les chaînes en datetime. Le paramètre format accélère la conversion sur de grands volumes. errors="coerce" transforme les valeurs invalides en NaT plutôt que de lever une erreur.'},
+
+{id:114,cat:'Python',level:'inter',type:'code',
+q:'Calcule la moyenne mobile sur 30 jours et l\'écart-type mobile sur 30 jours pour détecter les anomalies (méthode z-score).',
+code:`df = df.sort_values('date').set_index('date')
+
+df['ma_30'] = df['valeur'].rolling(30, min_periods=1).mean()
+df['std_30'] = df['valeur'].rolling(30, min_periods=1).std()
+
+df['z_score'] = (df['valeur'] - df['ma_30']) / df['std_30']
+df['anomalie'] = df['z_score'].abs() > 3
+
+print(f"Anomalies détectées : {df['anomalie'].sum()}")`,
+expl:'Le z-score mesure le nombre d\'écarts-types entre une valeur et la moyenne. |z| > 3 = outlier (règle des 3 sigma). Rolling sur 30 jours donne un contexte local plutôt que global. min_periods=1 évite les NaN au début de la série.'},
+
+{id:115,cat:'Python',level:'inter',type:'qcm',
+q:'Qu\'est-ce qu\'un générateur (generator) en Python et quel avantage a-t-il sur une liste ?',
+opts:['Synonyme de liste','Un objet itérable qui génère les valeurs à la demande (lazy evaluation) — consomme beaucoup moins de mémoire qu\'une liste pour de grands volumes','Un type de boucle','Un décorateur de fonction'],
+ans:1,
+expl:'Une liste génère toutes les valeurs en mémoire. Un générateur (yield) ne génère qu\'une valeur à la fois. Pour 10 millions de lignes : liste = ~800MB RAM, générateur = quelques KB. Utile pour lire de grands fichiers CSV par chunks : pd.read_csv(file, chunksize=10000).'},
+
+{id:116,cat:'Python',level:'inter',type:'code',
+q:'Lis un fichier CSV de 10 millions de lignes sans saturer la mémoire RAM. Calcule le CA total par catégorie.',
+code:`import pandas as pd
+
+ca_par_cat = {}
+
+for chunk in pd.read_csv('ventes.csv', chunksize=100_000):
+    grouped = chunk.groupby('categorie')['montant'].sum()
+    for cat, total in grouped.items():
+        ca_par_cat[cat] = ca_par_cat.get(cat, 0) + total
+
+result = pd.Series(ca_par_cat).sort_values(ascending=False)
+print(result)`,
+expl:'chunksize=100_000 lit le fichier par blocs de 100k lignes. On agrège chaque chunk et on accumule les résultats dans un dict. Mémoire utilisée : proportionnelle au chunksize, pas à la taille totale du fichier.'},
+
+{id:117,cat:'Python',level:'inter',type:'qcm',
+q:'Quelle est la différence entre une liste, un tuple et un set en Python ?',
+opts:['Synonymes','Liste : ordonnée, mutable, doublons. Tuple : ordonnée, immutable, doublons. Set : non ordonnée, mutable, sans doublons','Liste = nombres, Tuple = texte, Set = dates','Seule la liste est itérable'],
+ans:1,
+expl:'Liste [] : ordonnée, modifiable, autorise les doublons. Tuple () : ordonnée, non modifiable (hashable), plus rapide. Set {} : non ordonnée, sans doublons, opérations d\'ensemble rapides (union, intersection). Dict {} : paires clé-valeur, clés uniques. Choisir selon le besoin.'},
+
+{id:118,cat:'Python',level:'inter',type:'code',
+q:'Crée une fonction Python qui nettoie un DataFrame : supprime les doublons, remplace les NULL numériques par la médiane et les NULL textuels par "Inconnu".',
+code:`def clean_dataframe(df):
+    # Suppression des doublons
+    df = df.drop_duplicates()
+
+    for col in df.columns:
+        if df[col].dtype in ['int64', 'float64']:
+            # Remplacement NULL numériques par la médiane
+            median = df[col].median()
+            df[col] = df[col].fillna(median)
+        elif df[col].dtype == 'object':
+            # Remplacement NULL textuels
+            df[col] = df[col].fillna('Inconnu')
+
+    return df
+
+df_clean = clean_dataframe(df.copy())
+print(f"Lignes avant : {len(df)}, après : {len(df_clean)}")`,
+expl:'df.copy() évite de modifier le DataFrame original. fillna() remplace les NaN. La médiane est plus robuste que la moyenne pour les distributions asymétriques ou avec outliers. Toujours documenter les choix d\'imputation.'},
+
+{id:119,cat:'Python',level:'advanced',type:'code',
+q:'Crée un pipeline de traitement de données avec scikit-learn pour normaliser les features numériques et encoder les features catégorielles.',
+code:`from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.compose import ColumnTransformer
+import pandas as pd
+
+numeric_features = ['age', 'salaire', 'anciennete']
+categorical_features = ['departement', 'poste']
+
+preprocessor = ColumnTransformer(transformers=[
+    ('num', StandardScaler(), numeric_features),
+    ('cat', OneHotEncoder(drop='first', sparse_output=False),
+     categorical_features)
+])
+
+pipeline = Pipeline(steps=[
+    ('preprocessor', preprocessor)
+])
+
+X_train_processed = pipeline.fit_transform(X_train)
+X_test_processed = pipeline.transform(X_test)`,
+expl:'ColumnTransformer applique différentes transformations selon le type de colonne. StandardScaler normalise (moyenne=0, std=1). OneHotEncoder crée des variables dummy. Pipeline garantit qu\'on applique exactement les mêmes transformations sur train et test (pas de data leakage).'},
+
+{id:120,cat:'Python',level:'advanced',type:'qcm',
+q:'Qu\'est-ce que le "data leakage" en machine learning et comment l\'éviter ?',
+opts:['Une fuite de données personnelles','L\'utilisation d\'informations du jeu de test lors de l\'entraînement — conduit à des performances artificiellement élevées qui ne se reproduisent pas en production','Un type de bug mémoire','Une erreur de syntaxe'],
+ans:1,
+expl:'Exemples de leakage : normaliser sur tout le dataset avant le split train/test (la moyenne intègre les données de test), inclure des features qui ne seraient pas disponibles en production. Solution : toujours fit() sur le train seulement, transform() sur train et test. Utiliser des pipelines sklearn pour éviter les erreurs.'},
+
+{id:121,cat:'Python',level:'advanced',type:'code',
+q:'Écris une fonction pour calculer et visualiser la matrice de corrélation d\'un DataFrame avec un heatmap.',
+code:`import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+def plot_correlation_matrix(df, threshold=0.7):
+    # Calcul de la corrélation
+    corr = df.select_dtypes(include='number').corr()
+
+    # Masque pour le triangle supérieur
+    import numpy as np
+    mask = np.triu(np.ones_like(corr, dtype=bool))
+
+    fig, ax = plt.subplots(figsize=(10, 8))
+    sns.heatmap(
+        corr,
+        mask=mask,
+        annot=True,
+        fmt='.2f',
+        cmap='RdYlGn',
+        center=0,
+        vmin=-1, vmax=1,
+        ax=ax
+    )
+    ax.set_title('Matrice de corrélation')
+    plt.tight_layout()
+    plt.show()
+
+    # Corrélations fortes
+    strong = [(c1, c2, corr.loc[c1,c2])
+              for c1 in corr.columns
+              for c2 in corr.columns
+              if c1 < c2 and abs(corr.loc[c1,c2]) > threshold]
+    return strong
+
+plot_correlation_matrix(df)`,
+expl:'Le masque triangle supérieur évite la redondance. annot=True affiche les valeurs. cmap="RdYlGn" : rouge pour corrélations négatives, vert pour positives. Les corrélations > 0.7 entre features indiquent une multicolinéarité potentiellement problématique pour les modèles ML.'},
+
+{id:122,cat:'Python',level:'advanced',type:'qcm',
+q:'Qu\'est-ce que la décoration (decorator) en Python et donnez un exemple d\'usage en data engineering ?',
+opts:['Un commentaire de code','Une fonction qui wraps une autre fonction pour ajouter un comportement — ex: logging, timing, retry automatique','Un type de classe','Un module Python'],
+ans:1,
+expl:'@timer mesure le temps d\'exécution d\'une fonction. @retry(max_attempts=3) relance automatiquement en cas d\'erreur réseau. @log_execution enregistre les paramètres et résultats. En data engineering : décorer les fonctions d\'ingestion pour le monitoring et la résilience sans polluer le code métier.'},
+
+{id:123,cat:'Python',level:'advanced',type:'code',
+q:'Écris un décorateur Python qui mesure et affiche le temps d\'exécution d\'une fonction.',
+code:`import time
+from functools import wraps
+
+def timer(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        start = time.perf_counter()
+        result = func(*args, **kwargs)
+        elapsed = time.perf_counter() - start
+        print(f"{func.__name__} exécuté en {elapsed:.3f}s")
+        return result
+    return wrapper
+
+@timer
+def process_data(df):
+    return df.groupby('categorie')['montant'].sum()
+
+result = process_data(df)
+# Output: process_data exécuté en 0.042s`,
+expl:'@wraps(func) préserve le nom et la docstring de la fonction originale. perf_counter() est plus précis que time(). *args, **kwargs transmettent tous les arguments. Pattern très utilisé en data engineering pour le monitoring des performances.'},
+
+// ─── THÉORIE (+22) ───
+{id:124,cat:'Théorie',level:'basic',type:'qcm',
+q:'Qu\'est-ce que le Big Data et ses 3 V fondamentaux ?',
+opts:['Des données de grande taille uniquement','Volume (quantité massive), Vélocité (vitesse de génération), Variété (diversité des formats) — les 3 caractéristiques définissant le Big Data','Un outil de visualisation','Un type de base de données'],
+ans:1,
+expl:'Les 3V du Big Data : Volume (téraoctets, pétaoctets), Vélocité (données générées en temps réel ou quasi-réel), Variété (structuré, semi-structuré, non structuré). Certains ajoutent : Véracité (qualité) et Valeur (utilité). Ces caractéristiques justifient des architectures spécifiques (Hadoop, Spark, data lakes).'},
+
+{id:125,cat:'Théorie',level:'basic',type:'qcm',
+q:'Quelle est la différence entre une base de données relationnelle et NoSQL ?',
+opts:['Synonymes','Relationnelle : données tabulaires avec schéma fixe, SQL, ACID. NoSQL : schéma flexible, scalabilité horizontale, différents modèles (document, clé-valeur, graphe, colonne)','NoSQL ne supporte pas les requêtes','Les bases relationnelles ne peuvent pas stocker du JSON'],
+ans:1,
+expl:'Relationnelle (SQL) : PostgreSQL, MySQL, SQL Server — schéma strict, intégrité forte, requêtes complexes. NoSQL : MongoDB (document), Redis (clé-valeur), Cassandra (colonne), Neo4j (graphe) — flexibilité, scalabilité horizontale, souvent sacrifice de la cohérence pour la disponibilité (BASE vs ACID).'},
+
+{id:126,cat:'Théorie',level:'basic',type:'qcm',
+q:'Qu\'est-ce qu\'une API REST ?',
+opts:['Un type de base de données','Une interface standardisée permettant à des systèmes de communiquer via HTTP — utilisée pour récupérer des données depuis des services externes','Un langage de programmation','Un outil ETL'],
+ans:1,
+expl:'REST (Representational State Transfer) utilise les méthodes HTTP : GET (lire), POST (créer), PUT (modifier), DELETE (supprimer). Les données sont souvent échangées en JSON. En data : les APIs permettent de récupérer des données depuis des sources externes (Salesforce, Twitter, météo...) dans des pipelines ETL.'},
+
+{id:127,cat:'Théorie',level:'basic',type:'qcm',
+q:'Qu\'est-ce que le Machine Learning supervisé vs non supervisé ?',
+opts:['Synonymes','Supervisé : apprend depuis des données labellisées (classification, régression). Non supervisé : trouve des patterns sans labels (clustering, réduction de dimension)','Non supervisé est toujours plus précis','Supervisé ne nécessite pas de données'],
+ans:1,
+expl:'Supervisé : classification (spam/non-spam), régression (prédiction de prix). Non supervisé : clustering (segmentation clients avec K-Means), réduction de dimension (PCA). Semi-supervisé : mélange des deux. En tant que Data Analyst, comprendre ces concepts aide à collaborer avec les Data Scientists.'},
+
+{id:128,cat:'Théorie',level:'inter',type:'qcm',
+q:'Qu\'est-ce que le taux de churn et comment le calculer ?',
+opts:['Le taux de croissance','Le pourcentage de clients perdus sur une période — Churn = clients perdus / clients début de période × 100','Le taux de conversion','Le taux de satisfaction client'],
+ans:1,
+expl:'Churn mensuel = (clients début - clients fin) / clients début × 100. Ex : 1000 clients en janvier, 950 en février = 5% de churn. Le churn est un KPI critique pour les entreprises SaaS et d\'abonnement. Son inverse : le taux de rétention = 100% - churn%.'},
+
+{id:129,cat:'Théorie',level:'inter',type:'qcm',
+q:'Qu\'est-ce que le LTV (Lifetime Value) client ?',
+opts:['La durée de vie d\'un client','La valeur totale générée par un client tout au long de sa relation avec l\'entreprise — indicateur clé pour les décisions d\'acquisition et de rétention','Le premier achat d\'un client','Le coût d\'acquisition d\'un client'],
+ans:1,
+expl:'LTV = Panier moyen × Fréquence d\'achat × Durée de vie client. Ex : 50€ × 2 fois/mois × 24 mois = 2400€. LTV/CAC (Coût d\'acquisition) > 3 est généralement considéré comme sain. Le LTV guide les décisions : combien peut-on dépenser pour acquérir un client ?'},
+
+{id:130,cat:'Théorie',level:'inter',type:'qcm',
+q:'Qu\'est-ce que la p-value en statistiques et comment l\'interpréter ?',
+opts:['La probabilité que le résultat soit correct','La probabilité d\'obtenir un résultat au moins aussi extrême si l\'hypothèse nulle était vraie — p < 0.05 est le seuil standard de significativité','La taille de l\'échantillon requise','Le coefficient de corrélation'],
+ans:1,
+expl:'p < 0.05 : on rejette l\'hypothèse nulle avec 95% de confiance (le résultat est "statistiquement significatif"). p > 0.05 : on ne peut pas rejeter l\'hypothèse nulle. Attention : significatif ≠ important. Un effet peut être statistiquement significatif mais pratiquement négligeable sur de grands échantillons.'},
+
+{id:131,cat:'Théorie',level:'inter',type:'open',
+q:'Expliquez la différence entre précision (precision) et rappel (recall) en machine learning. Quand prioriser l\'un sur l\'autre ?',
+expl:'Précision = Vrais Positifs / (Vrais Positifs + Faux Positifs)\nLe modèle est-il précis quand il prédit positif ?\n\nRappel = Vrais Positifs / (Vrais Positifs + Faux Négatifs)\nLe modèle détecte-t-il tous les cas positifs ?\n\nTrade-off : améliorer la précision tend à réduire le rappel et vice-versa.\n\nPrioriser la précision : détection de spam (éviter les faux positifs — un vrai email en spam est grave).\nPrioriser le rappel : détection de cancer (éviter les faux négatifs — manquer un cancer est grave).\n\nF1-score = 2 × (précision × rappel) / (précision + rappel) — compromis équilibré.'},
+
+{id:132,cat:'Théorie',level:'inter',type:'qcm',
+q:'Qu\'est-ce que le NPS (Net Promoter Score) et comment se calcule-t-il ?',
+opts:['Un indicateur financier','Une mesure de la satisfaction client : % Promoteurs (note 9-10) - % Détracteurs (note 0-6) sur une question "recommanderiez-vous ?"','Un taux de conversion','Un indicateur de performance opérationnelle'],
+ans:1,
+expl:'NPS = % Promoteurs (9-10) - % Détracteurs (0-6). Les Passifs (7-8) ne sont pas comptés. Score entre -100 et +100. > 50 est excellent. Avantage : simple et comparable. Limite : ne dit pas pourquoi. À combiner avec des questions ouvertes pour comprendre les causes.'},
+
+{id:133,cat:'Théorie',level:'inter',type:'qcm',
+q:'Qu\'est-ce que le principe de "privacy by design" dans le contexte du RGPD ?',
+opts:['Un outil de chiffrement','Intégrer la protection des données personnelles dès la conception d\'un système, plutôt qu\'en ajout ultérieur','Un type de base de données sécurisée','Un processus de certification'],
+ans:1,
+expl:'Privacy by Design : 7 principes fondamentaux dont proactif (anticiper les risques), vie privée par défaut (paramètres les plus restrictifs par défaut), intégré dans la conception (pas ajouté après). Pour un Data Analyst : minimiser la collecte, anonymiser dès que possible, ne pas exposer les données personnelles brutes dans les rapports.'},
+
+{id:134,cat:'Théorie',level:'advanced',type:'open',
+q:'Qu\'est-ce que l\'architecture Lambda et l\'architecture Kappa ? Quand utiliser chacune ?',
+expl:'Architecture Lambda : deux couches parallèles.\n- Batch layer : traitement de tout l\'historique périodiquement (précis mais lent)\n- Speed layer : traitement des données récentes en temps réel (rapide mais approximatif)\n- Serving layer : combine les deux pour répondre aux requêtes\nProblème : complexité de maintenir deux codebases.\n\nArchitecture Kappa : une seule couche de streaming (Kafka, Flink). Les données historiques sont rejouées comme un stream si nécessaire. Plus simple mais nécessite un système de streaming robuste.\n\nChoix : Lambda pour les organisations avec des besoins batch importants et temps réel. Kappa pour les organisations cloud-native avec streaming mature. Tendance actuelle : vers Kappa ou des architectures lakehouse hybrides.'},
+
+{id:135,cat:'Théorie',level:'advanced',type:'qcm',
+q:'Qu\'est-ce que le concept de "observabilité" (observability) des données ?',
+opts:['Un outil de visualisation','La capacité à comprendre l\'état de santé de ses données à tout moment : fraîcheur, volume, qualité, schéma, lignage — pour détecter proactivement les incidents','Un type de monitoring réseau','Un processus de gouvernance'],
+ans:1,
+expl:'Data Observability (Monte Carlo, Great Expectations) surveille en continu : Fraîcheur (les données sont-elles à jour ?), Volume (le nombre de lignes est-il normal ?), Qualité (les valeurs sont dans les plages attendues ?), Schéma (les colonnes n\'ont pas changé ?), Lignage (l\'impact d\'un changement en amont). Essentiel pour les data teams à grande échelle.'},
+
+{id:136,cat:'Théorie',level:'advanced',type:'open',
+q:'Expliquez le concept de "semantic layer" et son rôle dans une architecture data moderne.',
+expl:'Le semantic layer (couche sémantique) est une abstraction entre les données brutes et les utilisateurs finaux. Il traduit les concepts techniques en termes métier compréhensibles.\n\nExemples d\'outils : dbt Metrics, LookML (Looker), Cube.dev, AtScale.\n\nCe qu\'il apporte :\n- Définitions communes des métriques (le CA est calculé de la même façon partout)\n- Gouvernance centralisée (modifier une définition se propage partout)\n- Self-service BI sécurisé (les utilisateurs ne voient que ce qu\'ils peuvent voir)\n- Cohérence entre outils (Power BI, Tableau, notebooks Python utilisent les mêmes métriques)\n\nProblème résolu : sans semantic layer, chaque rapport calcule le CA différemment → incohérences → perte de confiance dans les données.'},
+
+{id:137,cat:'Théorie',level:'advanced',type:'qcm',
+q:'Qu\'est-ce que le principe SOLID appliqué au code de data engineering ?',
+opts:['Un framework de sécurité','5 principes de conception logicielle : Single responsibility, Open/closed, Liskov substitution, Interface segregation, Dependency inversion — applicables aux pipelines de données','Un outil ETL','Un standard de qualité des données'],
+ans:1,
+expl:'Applied to data : S = chaque fonction/pipeline a une seule responsabilité (ingestion ≠ transformation ≠ chargement). O = les pipelines sont extensibles sans modifier le code existant. D = les dépendances sont injectées (connexions BDD, chemins fichiers) plutôt que codées en dur. Ces principes rendent les pipelines testables, maintenables et évolutifs.'},
+
+{id:138,cat:'Théorie',level:'advanced',type:'open',
+q:'Qu\'est-ce que le "feature engineering" et pourquoi est-il critique en machine learning ?',
+expl:'Le feature engineering est le processus de création, transformation et sélection de variables (features) à partir des données brutes pour améliorer les performances d\'un modèle ML.\n\nTechniques courantes :\n- Encodage : OneHotEncoder, target encoding pour les catégories\n- Normalisation/standardisation : StandardScaler, MinMaxScaler\n- Création de features : âge calculé depuis la date de naissance, interactions entre variables\n- Réduction de dimension : PCA, sélection de features (SelectKBest)\n- Traitement des dates : extraction jour/mois/semaine/heure, is_weekend, jours_depuis_événement\n\nPourquoi critique : "Better data beats better algorithms" (Andrew Ng). Un bon feature engineering avec un algorithme simple surpasse souvent un algorithme complexe avec des données brutes.'},
+
+{id:139,cat:'Théorie',level:'advanced',type:'qcm',
+q:'Qu\'est-ce que le concept de "data contract" dans les architectures data modernes ?',
+opts:['Un contrat légal sur les données','Un accord formel entre producteurs et consommateurs de données définissant le schéma, la qualité, la fraîcheur et les SLA attendus — prévient les breaking changes non communiqués','Un type de licence de données','Un outil de chiffrement'],
+ans:1,
+expl:'Un data contract spécifie : schéma (colonnes, types, nullable), qualité (taux de NULL max, valeurs attendues), fraîcheur (SLA de mise à jour), sémantique (définition métier). Si le producteur veut changer le schéma, il doit négocier avec les consommateurs. Implémentations : YAML + CI/CD, Great Expectations, Soda. Essentiel dans les architectures data mesh.'},
+
+{id:140,cat:'Théorie',level:'advanced',type:'open',
+q:'Expliquez les différences entre les métriques vanité et les métriques actionnables. Donnez des exemples.',
+expl:'Métriques vanité : donnent l\'impression de succès mais n\'aident pas à prendre des décisions. Elles sont souvent impressionnantes en valeur absolue mais non contextualisées.\nEx : nombre total de visiteurs, nombre de téléchargements, nombre de followers.\n\nMétriques actionnables : directement liées à des décisions, contextualisées, permettent de comprendre cause à effet.\nEx : taux de conversion par canal (actionnable : investir dans le canal X), revenu par utilisateur actif (actionnable : optimiser l\'onboarding), taux de rétention à J+30 (actionnable : améliorer les emails J+7).\n\nRègle : une bonne métrique répond à la question "Si ce chiffre change, sais-je exactement quoi faire ?" Si non, c\'est probablement une métrique vanité.\n\nFrameworks utiles : OKR (Objectives & Key Results), North Star Metric, AARRR (Acquisition, Activation, Rétention, Référence, Revenue).'},
+
+{id:141,cat:'Théorie',level:'advanced',type:'qcm',
+q:'Qu\'est-ce que le concept de "data democratization" et ses défis ?',
+opts:['Rendre les données publiques','Donner accès aux données et outils d\'analyse à tous les collaborateurs de l\'organisation, pas seulement aux équipes techniques — avec les défis de gouvernance et de qualité que cela implique','Un type de base de données open source','Un processus de migration'],
+ans:1,
+expl:'Data democratization = self-service BI pour tous. Bénéfices : décisions basées sur les données à tous les niveaux, réduction de la dépendance aux équipes data. Défis : qualité (les utilisateurs voient des données brutes mal comprises), gouvernance (qui a accès à quoi ?), shadow IT (chacun crée ses propres rapports contradictoires), formation (les utilisateurs doivent comprendre les limites des données). Solution : semantic layer + gouvernance forte + formation.'},
+
+{id:142,cat:'Théorie',level:'advanced',type:'open',
+q:'Qu\'est-ce que le "data storytelling" et pourquoi est-il une compétence clé pour un Data Analyst ?',
+expl:'Le data storytelling est l\'art de communiquer des insights de données de façon claire, engageante et convaincante pour une audience non technique.\n\n3 composantes :\n1. Les données : analyses rigoureuses, chiffres vérifiés\n2. La narration : contexte, cause à effet, implications\n3. La visualisation : graphiques clairs, hiérarchie visuelle\n\nPourquoi critique : un insight non communiqué = un insight inutile. Les décideurs prennent des décisions basées sur des histoires, pas des tableaux Excel.\n\nBonnes pratiques :\n- Commencer par la conclusion (pyramid principle)\n- Adapter le niveau de détail à l\'audience\n- Utiliser le bon type de graphique selon le message\n- Éviter le chartjunk (éléments décoratifs sans valeur)\n- Une slide = une idée\n\nOutils : Power BI, Tableau, Flourish, Datawrapper.'},
+
+{id:143,cat:'Théorie',level:'advanced',type:'qcm',
+q:'Qu\'est-ce que le principe de "data minimization" et pourquoi est-il important ?',
+opts:['Compresser les données','Ne collecter et conserver que les données strictement nécessaires à la finalité déclarée — principe fondamental du RGPD et bonne pratique de gouvernance','Supprimer les doublons','Réduire la taille des fichiers'],
+ans:1,
+expl:'Data minimization : collecter le minimum nécessaire, conserver le minimum de temps, accorder le minimum d\'accès. Avantages : conformité RGPD, réduction des risques en cas de breach, coûts de stockage réduits, modèles de données plus simples. En pratique : purge automatique des données expirées, anonymisation après X mois, colonnes sensibles masquées selon le profil utilisateur.'},
+
+{id:144,cat:'Théorie',level:'advanced',type:'open',
+q:'Expliquez comment vous aborderiez l\'analyse d\'une anomalie : une chute soudaine de 30% du CA un mardi.',
+expl:'Approche structurée d\'investigation :\n\n1. Qualifier l\'anomalie\n- Vérifier la source des données (problème de pipeline ?)\n- Confirmer sur plusieurs systèmes\n- Vérifier les dates (décalage de reporting ?)\n\n2. Isoler la dimension affectée\n- Par canal (web, mobile, magasin ?)\n- Par géographie\n- Par catégorie de produit\n- Par segment client\n- Par heure de la journée\n\n3. Chercher les causes externes\n- Incident technique (site down, paiement KO ?)\n- Action concurrente\n- Événement externe (météo, actualité ?)\n- Campagne marketing stoppée ?\n\n4. Corréler avec d\'autres métriques\n- Trafic en baisse aussi ? → problème acquisition\n- Trafic normal, conversion en baisse ? → problème site/offre\n- Panier moyen en baisse ? → problème pricing/promo\n\n5. Communiquer\n- Hypothèse principale + niveau de confiance\n- Actions recommandées\n- Suivi à J+1, J+7'}
+
+,
+
+{id:145,cat:'Théorie',level:'inter',type:'qcm',
+q:'Qu\'est-ce que le taux de conversion et comment l\'améliorer ?',
+opts:['Le taux de croissance du CA','Le pourcentage de visiteurs qui réalisent l\'action souhaitée — s\'améliore via l\'optimisation du tunnel et l\'A/B testing','Le taux de satisfaction client','Le ratio nouveaux/anciens clients'],
+ans:1,
+expl:'Taux de conversion = (Conversions / Visiteurs) × 100. Ex : 1000 visiteurs, 30 achats = 3%. Leviers : UX, vitesse, preuve sociale, personnalisation. L\'A/B test est l\'outil clé pour valider chaque amélioration.'},
+
+{id:146,cat:'Théorie',level:'basic',type:'qcm',
+q:'Qu\'est-ce qu\'un entrepôt de données (data warehouse) ?',
+opts:['Une salle de serveurs physiques','Un système centralisé pour stocker, intégrer et analyser de grandes quantités de données historiques provenant de multiples sources','Un outil de visualisation','Une base de données transactionnelle'],
+ans:1,
+expl:'Un data warehouse centralise les données de plusieurs systèmes sources (CRM, ERP, web...) dans un format optimisé pour l\'analyse. Caractéristiques : orienté sujet, intégré, non volatile, variant dans le temps. Ex : Snowflake, BigQuery, Redshift.'},
+
+{id:147,cat:'DAX',level:'basic',type:'qcm',
+q:'Quelle est la fonction DAX pour calculer une moyenne ?',
+opts:['MEAN()','AVERAGE()','AVG()','SUM() / COUNT()'],
+ans:1,
+expl:'AVERAGE(table[colonne]) calcule la moyenne arithmétique des valeurs non-NULL. AVERAGEX(table, expression) itère ligne par ligne comme SUMX. En SQL l\'équivalent est AVG(). Attention : AVERAGE ignore les NULL contrairement à une division manuelle.'},
+
+{id:148,cat:'DAX',level:'inter',type:'code',
+q:'Écris une mesure qui calcule le nombre de jours depuis le dernier achat pour chaque client (récence).',
+code:`Récence Jours =
+VAR derniere_date =
+    CALCULATE(
+        MAX(fact_ventes[date_vente]),
+        ALLEXCEPT(fact_ventes, dim_client[id_client])
+    )
+VAR aujourd_hui = TODAY()
+RETURN
+DATEDIFF(derniere_date, aujourd_hui, DAY)`,
+expl:'DATEDIFF(date_début, date_fin, intervalle) calcule la différence entre deux dates. TODAY() retourne la date du jour. ALLEXCEPT conserve le filtre client. La récence est le R du modèle RFM (Récence, Fréquence, Montant).'},
+
+{id:149,cat:'Théorie',level:'advanced',type:'qcm',
+q:'Qu\'est-ce que le modèle RFM et comment l\'utiliser pour segmenter les clients ?',
+opts:['Un framework de machine learning','Un modèle de segmentation client basé sur la Récence, la Fréquence et le Montant dépensé','Un indicateur financier','Un type de dashboard'],
+ans:1,
+expl:'RFM score chaque client sur 3 dimensions (1-5). R élevé = achat récent. F élevée = achète souvent. M élevé = dépense beaucoup. Segments : Champions (5-5-5), Fidèles (4-5-x), À risque (2-4-4), Perdus (1-1-1). Permet des actions ciblées : réactivation, fidélisation, upsell.'},
+
+{id:150,cat:'Théorie',level:'inter',type:'open',
+q:'Qu\'est-ce que le principe de "shift left" en qualité des données ?',
+expl:'Le shift left signifie détecter et corriger les problèmes de qualité le plus tôt possible dans le pipeline.\n\nTraditionnellement : les erreurs sont découvertes par les utilisateurs finaux dans les rapports (trop tard).\n\nShift left : intégrer les contrôles dès l\'ingestion :\n- Validation du schéma à l\'entrée\n- Tests automatiques après chaque transformation (dbt tests)\n- Alertes en cas d\'anomalie de volume ou de valeur\n- Data contracts entre producteurs et consommateurs\n\nAvantages : coût de correction 10x moins élevé en amont, confiance accrue, moins d\'incidents.\n\nOutils : Great Expectations, Soda, dbt tests, Pydantic.'}
+
 ];
 
 // ══════════════════════════════════════════
