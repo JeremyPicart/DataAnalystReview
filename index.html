@@ -192,6 +192,16 @@ header{background:var(--surface);border-bottom:1px solid var(--line);padding:0 4
 <header>
   <div class="logo">Data<em>Prep</em></div>
   <div class="header-right">
+<div style="position:relative;display:inline-block;" id="resetWrap">
+<button class="btn btn-out" style="font-size:11px;padding:4px 10px;" onclick="showResetConfirm()" title="Réinitialiser la progression">↺ Reset</button>
+<div id="resetConfirm" style="display:none;position:absolute;top:36px;right:0;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:10px 12px;width:200px;box-shadow:0 4px 12px rgba(0,0,0,0.12);z-index:200;">
+  <div style="font-size:11px;color:var(--ink2);margin-bottom:8px;line-height:1.5;">Supprimer toute la progression ?</div>
+  <div style="display:flex;gap:6px;">
+    <button class="btn btn-dark" style="flex:1;font-size:11px;padding:4px 0;" onclick="confirmReset()">Oui, reset</button>
+    <button class="btn btn-out" style="flex:1;font-size:11px;padding:4px 0;" onclick="cancelReset()">Annuler</button>
+  </div>
+</div>
+</div>
     <div class="score-pill" id="scorePill">QCM : <strong>0 / 0</strong></div>
     <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">🌙</button>
   </div>
@@ -1779,8 +1789,47 @@ expl:'Le shift left signifie détecter et corriger les problèmes de qualité le
 // STATE
 // ══════════════════════════════════════════
 let F={cat:'all',level:'all',type:'all',status:'all'};
-let answered={};   // qid → {type:'qcm'|'other', correct:bool|null}
+let answered={};
 let qcmScore=0, qcmAnswered=0;
+
+const LS_KEY='dataprep_v1';
+
+function saveState(){
+  try{localStorage.setItem(LS_KEY,JSON.stringify({answered,qcmScore,qcmAnswered}));}catch(e){}
+}
+
+function loadState(){
+  try{
+    const raw=localStorage.getItem(LS_KEY);
+    if(!raw)return;
+    const s=JSON.parse(raw);
+    if(s.answered)answered=s.answered;
+    if(typeof s.qcmScore==='number')qcmScore=s.qcmScore;
+    if(typeof s.qcmAnswered==='number')qcmAnswered=s.qcmAnswered;
+    document.getElementById('scorePill').innerHTML=`QCM : <strong>${qcmScore} / ${qcmAnswered}</strong>`;
+  }catch(e){}
+}
+
+function showResetConfirm(){
+  document.getElementById('resetConfirm').style.display='block';
+  document.addEventListener('click', outsideResetClick);
+}
+function outsideResetClick(e){
+  const wrap=document.getElementById('resetWrap');
+  if(!wrap.contains(e.target)){cancelReset();}
+}
+function cancelReset(){
+  document.getElementById('resetConfirm').style.display='none';
+  document.removeEventListener('click', outsideResetClick);
+}
+function confirmReset(){
+  answered={};qcmScore=0;qcmAnswered=0;
+  saveState();
+  document.getElementById('scorePill').innerHTML='QCM : <strong>0 / 0</strong>';
+  cancelReset();
+  updateTabProgress();
+  render();
+}
 
 function getFiltered(){
   return Q.filter(q=>{
@@ -1877,6 +1926,7 @@ function answerQCM(qid,chosen){
   answered[qid]={type:'qcm',correct,chosen};
   if(correct)qcmScore++;
   qcmAnswered++;
+  saveState();
   document.getElementById('scorePill').innerHTML=`QCM : <strong>${qcmScore} / ${qcmAnswered}</strong>`;
   updateTabProgress();
   render();
@@ -1884,6 +1934,7 @@ function answerQCM(qid,chosen){
 
 function reveal(qid){
   if(!answered[qid])answered[qid]={type:'other',correct:null};
+  saveState();
   const el=document.getElementById('expl-'+qid);
   if(el)el.classList.add('show');
   updateTabProgress();
@@ -1952,6 +2003,7 @@ function toggleFiche(qid,btn){
   }
 }
 
+loadState();
 updateTabProgress();
 render();
 </script>
