@@ -643,11 +643,6 @@ GROUP BY id_produit
 ORDER BY ca_produit DESC`,
 expl:'SUM(SUM(...)) OVER () est une window function sur l\'agrégat. Le OVER() vide = fenêtre sur toute la table. Pas besoin de sous-requête ni de CTE séparé.'},
 
-{id:20,cat:'SQL',level:'advanced',type:'qcm',tables:['transactions'],
-q:'Qu\'est-ce que le principe de "SARGability" en SQL ?',
-opts:['Un type de jointure','La capacité d\'une condition WHERE à utiliser un index efficacement — éviter les fonctions sur les colonnes indexées','Un niveau de transaction','Un type d\'agrégation'],
-ans:1,expl:'SARGable (Search ARGument able) = une condition peut utiliser un index. Non-SARGable : WHERE YEAR(date) = 2024 (fonction sur la colonne). SARGable : WHERE date >= \'2024-01-01\' AND date < \'2025-01-01\'. Les fonctions sur colonnes indexées empêchent l\'utilisation de l\'index.'},
-
 {id:21,cat:'SQL',level:'advanced',type:'code',tables:['commandes','clients'],
 q:'Trouve les clients qui ont passé des commandes chaque mois pendant les 3 derniers mois (fidélité consécutive).',
 code:`WITH monthly AS (
@@ -1006,11 +1001,6 @@ ans:1,expl:'Un A/B test divise aléatoirement une population en deux groupes : g
 q:'Expliquez la différence entre rapport, dashboard et analyse ad hoc. Quand utiliser chacun ?',
 expl:'Rapport : document structuré, périodique, métriques fixes et prédéfinies. Destiné à des parties prenantes précises. Ex : rapport mensuel des ventes. → Quand : suivi régulier de KPIs stables.\n\nDashboard : interface interactive, mise à jour automatique, exploration autonome par les métiers. Ex : Power BI pour les managers. → Quand : monitoring en continu, self-service BI.\n\nAnalyse ad hoc : investigation ponctuelle pour répondre à une question spécifique non prévue. Flexible, non répétitive. Ex : comprendre une chute des ventes. → Quand : anomalie, décision stratégique urgente.\n\nErreur courante : créer un dashboard pour une question ponctuelle, ou faire une analyse ad hoc à répétition au lieu d\'automatiser.'},
 
-{id:68,cat:'Théorie',level:'advanced',type:'qcm',
-q:'Qu\'est-ce que le principe "Data Mesh" ?',
-opts:['Un outil ETL','Une approche décentralisée où chaque domaine métier est responsable de ses propres données comme des "produits data"','Un type de schéma de base de données','Un standard de visualisation'],
-ans:1,expl:'Data Mesh (Zhamak Dehghani, 2019) : 4 principes. 1) Ownership décentralisé par domaine. 2) Données comme produits (qualité, documentation, SLA). 3) Infrastructure self-serve partagée. 4) Gouvernance fédérée. Répond aux limites des data lakes/warehouses centralisés sur de grandes organisations.'},
-
 {id:69,cat:'Théorie',level:'advanced',type:'open',
 q:'Qu\'est-ce que la gouvernance des données (Data Governance) et pourquoi est-elle critique ?',
 expl:'La gouvernance des données est l\'ensemble des politiques, processus et responsabilités qui garantissent la qualité, la sécurité et la conformité des données dans une organisation.\n\nComposantes clés :\n- Data Catalog : inventaire des données disponibles et leur définition\n- Data Lineage : traçabilité de l\'origine et des transformations des données\n- Data Stewardship : responsables désignés par domaine de données\n- Gestion des accès : qui peut voir et modifier quelles données\n- Conformité réglementaire : RGPD, CSRD, secteur financier...\n\nSans gouvernance : données contradictoires entre équipes, risques légaux, perte de confiance dans les analyses.'},
@@ -1195,40 +1185,6 @@ opts:['Un processus d\'optimisation des index','Un processus d\'organisation des
 ans:1,
 expl:'1NF : valeurs atomiques, pas de groupes répétés. 2NF : 1NF + chaque attribut dépend de toute la clé primaire. 3NF : 2NF + pas de dépendance transitive (A→B→C, B doit être dans sa propre table). En pratique, les data warehouses dénormalisent intentionnellement pour les performances analytiques.'},
 
-{id:86,cat:'SQL',level:'advanced',type:'code',tables:['logs'],
-q:'Analyse le funnel de conversion : pour chaque étape (view → click → purchase), calcule le nombre d\'utilisateurs et le taux de passage à l\'étape suivante.',
-code:`WITH funnel AS (
-    SELECT
-        action,
-        COUNT(DISTINCT user_id) AS nb_users
-    FROM logs
-    WHERE action IN ('view', 'click', 'purchase')
-    GROUP BY action
-),
-ordered AS (
-    SELECT
-        action,
-        nb_users,
-        CASE action
-            WHEN 'view' THEN 1
-            WHEN 'click' THEN 2
-            WHEN 'purchase' THEN 3
-        END AS etape
-    FROM funnel
-)
-SELECT
-    etape,
-    action,
-    nb_users,
-    ROUND(
-        nb_users * 100.0 /
-        FIRST_VALUE(nb_users) OVER (ORDER BY etape),
-        1
-    ) AS pct_vs_top
-FROM ordered
-ORDER BY etape`,
-expl:'FIRST_VALUE() OVER retourne la valeur de la première ligne de la fenêtre — ici le nb_users de l\'étape 1 (view). Diviser chaque étape par cette valeur donne le taux de conversion cumulé depuis le début du funnel.'},
-
 {id:87,cat:'SQL',level:'advanced',type:'qcm',
 q:'Qu\'est-ce qu\'une transaction SQL et que signifie ACID ?',
 opts:['Un type de requête SELECT','Un bloc d\'opérations traité comme une unité indivisible. ACID = Atomicité, Cohérence, Isolation, Durabilité','Un type de jointure','Un niveau d\'index'],
@@ -1336,34 +1292,6 @@ opts:['Synonyme de ALL()','CALCULATE remplace les filtres existants. KEEPFILTERS
 ans:1,
 expl:'CALCULATE([CA], dim_produit[categorie]="Électronique") remplace le filtre catégorie existant. CALCULATE([CA], KEEPFILTERS(dim_produit[categorie]="Électronique")) intersecte avec le filtre existant. Si un slicer a déjà filtré "Vêtements", KEEPFILTERS retournera BLANK() car l\'intersection est vide.'},
 
-{id:97,cat:'DAX',level:'advanced',type:'code',
-q:'Crée une mesure de cohort analysis : CA des clients acquis chaque mois, suivi mois par mois.',
-code:`CA Cohorte =
-VAR mois_acquisition =
-    CALCULATE(
-        MIN(dim_date[annee_mois]),
-        ALL(dim_date),
-        FILTER(
-            VALUES(fact_ventes[id_client]),
-            CALCULATE(MIN(fact_ventes[date_vente])) =
-            MIN(fact_ventes[date_vente])
-        )
-    )
-VAR mois_courant = SELECTEDVALUE(dim_date[annee_mois])
-RETURN
-IF(
-    mois_courant >= mois_acquisition,
-    [CA Total],
-    BLANK()
-)`,
-expl:'La cohort analysis groupe les clients par mois d\'acquisition et suit leur comportement dans le temps. Cette mesure retourne le CA uniquement pour les mois postérieurs à l\'acquisition de la cohorte. Utilisée dans une matrice (cohorte en lignes, mois en colonnes).'},
-
-{id:98,cat:'DAX',level:'advanced',type:'qcm',
-q:'Qu\'est-ce que le principe de "measure branching" en DAX et pourquoi est-il une bonne pratique ?',
-opts:['Un type de relation entre tables','Construire des mesures complexes en réutilisant des mesures simples — améliore la lisibilité, la maintenance et les performances','Un type de fonction DAX','Une technique d\'optimisation des colonnes calculées'],
-ans:1,
-expl:'Exemple : [CA Total] → [CA Last Year] → [Croissance %]. Chaque mesure s\'appuie sur la précédente. Avantages : modifier [CA Total] propage automatiquement les changements. Plus lisible que tout ré-écrire dans chaque mesure. Performances : DAX met en cache les mesures de base.'},
-
 {id:99,cat:'DAX',level:'advanced',type:'code',
 q:'Écris une mesure qui calcule le percentile 90 du montant des ventes.',
 code:`P90 Montant Ventes =
@@ -1426,12 +1354,6 @@ expl:'Le CDC lit les logs de transaction de la base source pour détecter les ch
 {id:107,cat:'Modélisation',level:'advanced',type:'open',
 q:'Qu\'est-ce que dbt (data build tool) et quel problème résout-il ?',
 expl:'dbt est un outil de transformation de données qui applique les bonnes pratiques du développement logiciel au data engineering.\n\nProblème résolu : les transformations SQL étaient souvent des scripts non versionnés, non testés, difficiles à maintenir.\n\ndbt apporte :\n- Modularité : les transformations SQL sont organisées en modèles réutilisables\n- Tests automatiques : vérification de la qualité des données (unicité, non-null, valeurs attendues)\n- Documentation : générée automatiquement depuis le code\n- Lineage : visualisation des dépendances entre modèles\n- Versioning : compatible Git\n\nPattern : dbt s\'occupe du T de l\'ELT. Les données sont déjà dans le warehouse, dbt les transforme en SQL.'},
-
-{id:108,cat:'Modélisation',level:'advanced',type:'qcm',
-q:'Qu\'est-ce que le principe de "Single Source of Truth" (SSOT) ?',
-opts:['Un type de base de données','Le principe selon lequel chaque donnée a une source canonique unique et authoritative — évite les incohérences entre systèmes','Un outil de gouvernance','Un type de backup'],
-ans:1,
-expl:'Sans SSOT : le CA dans le CRM diffère du CA dans l\'ERP diffère du CA dans Excel du commercial. Avec SSOT : le data warehouse est la référence unique, tous les rapports s\'y connectent. Implique une gouvernance forte : définitions communes des métriques, processus de certification des données.'},
 
 {id:109,cat:'Modélisation',level:'advanced',type:'qcm',
 q:'Qu\'est-ce qu\'Apache Spark et quand l\'utiliser vs SQL classique ?',
@@ -1529,30 +1451,6 @@ df_clean = clean_dataframe(df.copy())
 print(f"Lignes avant : {len(df)}, après : {len(df_clean)}")`,
 expl:'df.copy() évite de modifier le DataFrame original. fillna() remplace les NaN. La médiane est plus robuste que la moyenne pour les distributions asymétriques ou avec outliers. Toujours documenter les choix d\'imputation.'},
 
-{id:119,cat:'Python',level:'advanced',type:'code',
-q:'Crée un pipeline de traitement de données avec scikit-learn pour normaliser les features numériques et encoder les features catégorielles.',
-code:`from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
-from sklearn.compose import ColumnTransformer
-import pandas as pd
-
-numeric_features = ['age', 'salaire', 'anciennete']
-categorical_features = ['departement', 'poste']
-
-preprocessor = ColumnTransformer(transformers=[
-    ('num', StandardScaler(), numeric_features),
-    ('cat', OneHotEncoder(drop='first', sparse_output=False),
-     categorical_features)
-])
-
-pipeline = Pipeline(steps=[
-    ('preprocessor', preprocessor)
-])
-
-X_train_processed = pipeline.fit_transform(X_train)
-X_test_processed = pipeline.transform(X_test)`,
-expl:'ColumnTransformer applique différentes transformations selon le type de colonne. StandardScaler normalise (moyenne=0, std=1). OneHotEncoder crée des variables dummy. Pipeline garantit qu\'on applique exactement les mêmes transformations sur train et test (pas de data leakage).'},
-
 {id:120,cat:'Python',level:'advanced',type:'qcm',
 q:'Qu\'est-ce que le "data leakage" en machine learning et comment l\'éviter ?',
 opts:['Une fuite de données personnelles','L\'utilisation d\'informations du jeu de test lors de l\'entraînement — conduit à des performances artificiellement élevées qui ne se reproduisent pas en production','Un type de bug mémoire','Une erreur de syntaxe'],
@@ -1598,36 +1496,6 @@ def plot_correlation_matrix(df, threshold=0.7):
 plot_correlation_matrix(df)`,
 expl:'Le masque triangle supérieur évite la redondance. annot=True affiche les valeurs. cmap="RdYlGn" : rouge pour corrélations négatives, vert pour positives. Les corrélations > 0.7 entre features indiquent une multicolinéarité potentiellement problématique pour les modèles ML.'},
 
-{id:122,cat:'Python',level:'advanced',type:'qcm',
-q:'Qu\'est-ce que la décoration (decorator) en Python et donnez un exemple d\'usage en data engineering ?',
-opts:['Un commentaire de code','Une fonction qui wraps une autre fonction pour ajouter un comportement — ex: logging, timing, retry automatique','Un type de classe','Un module Python'],
-ans:1,
-expl:'@timer mesure le temps d\'exécution d\'une fonction. @retry(max_attempts=3) relance automatiquement en cas d\'erreur réseau. @log_execution enregistre les paramètres et résultats. En data engineering : décorer les fonctions d\'ingestion pour le monitoring et la résilience sans polluer le code métier.'},
-
-{id:123,cat:'Python',level:'advanced',type:'code',
-q:'Écris un décorateur Python qui mesure et affiche le temps d\'exécution d\'une fonction.',
-code:`import time
-from functools import wraps
-
-def timer(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        start = time.perf_counter()
-        result = func(*args, **kwargs)
-        elapsed = time.perf_counter() - start
-        print(f"{func.__name__} exécuté en {elapsed:.3f}s")
-        return result
-    return wrapper
-
-@timer
-def process_data(df):
-    return df.groupby('categorie')['montant'].sum()
-
-result = process_data(df)
-# Output: process_data exécuté en 0.042s`,
-expl:'@wraps(func) préserve le nom et la docstring de la fonction originale. perf_counter() est plus précis que time(). *args, **kwargs transmettent tous les arguments. Pattern très utilisé en data engineering pour le monitoring des performances.'},
-
-// ─── THÉORIE (+22) ───
 {id:124,cat:'Théorie',level:'basic',type:'qcm',
 q:'Qu\'est-ce que le Big Data et ses 3 V fondamentaux ?',
 opts:['Des données de grande taille uniquement','Volume (quantité massive), Vélocité (vitesse de génération), Variété (diversité des formats) — les 3 caractéristiques définissant le Big Data','Un outil de visualisation','Un type de base de données'],
@@ -1686,50 +1554,6 @@ opts:['Un outil de chiffrement','Intégrer la protection des données personnell
 ans:1,
 expl:'Privacy by Design : 7 principes fondamentaux dont proactif (anticiper les risques), vie privée par défaut (paramètres les plus restrictifs par défaut), intégré dans la conception (pas ajouté après). Pour un Data Analyst : minimiser la collecte, anonymiser dès que possible, ne pas exposer les données personnelles brutes dans les rapports.'},
 
-{id:134,cat:'Théorie',level:'advanced',type:'open',
-q:'Qu\'est-ce que l\'architecture Lambda et l\'architecture Kappa ? Quand utiliser chacune ?',
-expl:'Architecture Lambda : deux couches parallèles.\n- Batch layer : traitement de tout l\'historique périodiquement (précis mais lent)\n- Speed layer : traitement des données récentes en temps réel (rapide mais approximatif)\n- Serving layer : combine les deux pour répondre aux requêtes\nProblème : complexité de maintenir deux codebases.\n\nArchitecture Kappa : une seule couche de streaming (Kafka, Flink). Les données historiques sont rejouées comme un stream si nécessaire. Plus simple mais nécessite un système de streaming robuste.\n\nChoix : Lambda pour les organisations avec des besoins batch importants et temps réel. Kappa pour les organisations cloud-native avec streaming mature. Tendance actuelle : vers Kappa ou des architectures lakehouse hybrides.'},
-
-{id:135,cat:'Théorie',level:'advanced',type:'qcm',
-q:'Qu\'est-ce que le concept de "observabilité" (observability) des données ?',
-opts:['Un outil de visualisation','La capacité à comprendre l\'état de santé de ses données à tout moment : fraîcheur, volume, qualité, schéma, lignage — pour détecter proactivement les incidents','Un type de monitoring réseau','Un processus de gouvernance'],
-ans:1,
-expl:'Data Observability (Monte Carlo, Great Expectations) surveille en continu : Fraîcheur (les données sont-elles à jour ?), Volume (le nombre de lignes est-il normal ?), Qualité (les valeurs sont dans les plages attendues ?), Schéma (les colonnes n\'ont pas changé ?), Lignage (l\'impact d\'un changement en amont). Essentiel pour les data teams à grande échelle.'},
-
-{id:136,cat:'Théorie',level:'advanced',type:'open',
-q:'Expliquez le concept de "semantic layer" et son rôle dans une architecture data moderne.',
-expl:'Le semantic layer (couche sémantique) est une abstraction entre les données brutes et les utilisateurs finaux. Il traduit les concepts techniques en termes métier compréhensibles.\n\nExemples d\'outils : dbt Metrics, LookML (Looker), Cube.dev, AtScale.\n\nCe qu\'il apporte :\n- Définitions communes des métriques (le CA est calculé de la même façon partout)\n- Gouvernance centralisée (modifier une définition se propage partout)\n- Self-service BI sécurisé (les utilisateurs ne voient que ce qu\'ils peuvent voir)\n- Cohérence entre outils (Power BI, Tableau, notebooks Python utilisent les mêmes métriques)\n\nProblème résolu : sans semantic layer, chaque rapport calcule le CA différemment → incohérences → perte de confiance dans les données.'},
-
-{id:137,cat:'Théorie',level:'advanced',type:'qcm',
-q:'Qu\'est-ce que le principe SOLID appliqué au code de data engineering ?',
-opts:['Un framework de sécurité','5 principes de conception logicielle : Single responsibility, Open/closed, Liskov substitution, Interface segregation, Dependency inversion — applicables aux pipelines de données','Un outil ETL','Un standard de qualité des données'],
-ans:1,
-expl:'Applied to data : S = chaque fonction/pipeline a une seule responsabilité (ingestion ≠ transformation ≠ chargement). O = les pipelines sont extensibles sans modifier le code existant. D = les dépendances sont injectées (connexions BDD, chemins fichiers) plutôt que codées en dur. Ces principes rendent les pipelines testables, maintenables et évolutifs.'},
-
-{id:138,cat:'Théorie',level:'advanced',type:'open',
-q:'Qu\'est-ce que le "feature engineering" et pourquoi est-il critique en machine learning ?',
-expl:'Le feature engineering est le processus de création, transformation et sélection de variables (features) à partir des données brutes pour améliorer les performances d\'un modèle ML.\n\nTechniques courantes :\n- Encodage : OneHotEncoder, target encoding pour les catégories\n- Normalisation/standardisation : StandardScaler, MinMaxScaler\n- Création de features : âge calculé depuis la date de naissance, interactions entre variables\n- Réduction de dimension : PCA, sélection de features (SelectKBest)\n- Traitement des dates : extraction jour/mois/semaine/heure, is_weekend, jours_depuis_événement\n\nPourquoi critique : "Better data beats better algorithms" (Andrew Ng). Un bon feature engineering avec un algorithme simple surpasse souvent un algorithme complexe avec des données brutes.'},
-
-{id:139,cat:'Théorie',level:'advanced',type:'qcm',
-q:'Qu\'est-ce que le concept de "data contract" dans les architectures data modernes ?',
-opts:['Un contrat légal sur les données','Un accord formel entre producteurs et consommateurs de données définissant le schéma, la qualité, la fraîcheur et les SLA attendus — prévient les breaking changes non communiqués','Un type de licence de données','Un outil de chiffrement'],
-ans:1,
-expl:'Un data contract spécifie : schéma (colonnes, types, nullable), qualité (taux de NULL max, valeurs attendues), fraîcheur (SLA de mise à jour), sémantique (définition métier). Si le producteur veut changer le schéma, il doit négocier avec les consommateurs. Implémentations : YAML + CI/CD, Great Expectations, Soda. Essentiel dans les architectures data mesh.'},
-
-{id:140,cat:'Théorie',level:'advanced',type:'open',
-q:'Expliquez les différences entre les métriques vanité et les métriques actionnables. Donnez des exemples.',
-expl:'Métriques vanité : donnent l\'impression de succès mais n\'aident pas à prendre des décisions. Elles sont souvent impressionnantes en valeur absolue mais non contextualisées.\nEx : nombre total de visiteurs, nombre de téléchargements, nombre de followers.\n\nMétriques actionnables : directement liées à des décisions, contextualisées, permettent de comprendre cause à effet.\nEx : taux de conversion par canal (actionnable : investir dans le canal X), revenu par utilisateur actif (actionnable : optimiser l\'onboarding), taux de rétention à J+30 (actionnable : améliorer les emails J+7).\n\nRègle : une bonne métrique répond à la question "Si ce chiffre change, sais-je exactement quoi faire ?" Si non, c\'est probablement une métrique vanité.\n\nFrameworks utiles : OKR (Objectives & Key Results), North Star Metric, AARRR (Acquisition, Activation, Rétention, Référence, Revenue).'},
-
-{id:141,cat:'Théorie',level:'advanced',type:'qcm',
-q:'Qu\'est-ce que le concept de "data democratization" et ses défis ?',
-opts:['Rendre les données publiques','Donner accès aux données et outils d\'analyse à tous les collaborateurs de l\'organisation, pas seulement aux équipes techniques — avec les défis de gouvernance et de qualité que cela implique','Un type de base de données open source','Un processus de migration'],
-ans:1,
-expl:'Data democratization = self-service BI pour tous. Bénéfices : décisions basées sur les données à tous les niveaux, réduction de la dépendance aux équipes data. Défis : qualité (les utilisateurs voient des données brutes mal comprises), gouvernance (qui a accès à quoi ?), shadow IT (chacun crée ses propres rapports contradictoires), formation (les utilisateurs doivent comprendre les limites des données). Solution : semantic layer + gouvernance forte + formation.'},
-
-{id:142,cat:'Théorie',level:'advanced',type:'open',
-q:'Qu\'est-ce que le "data storytelling" et pourquoi est-il une compétence clé pour un Data Analyst ?',
-expl:'Le data storytelling est l\'art de communiquer des insights de données de façon claire, engageante et convaincante pour une audience non technique.\n\n3 composantes :\n1. Les données : analyses rigoureuses, chiffres vérifiés\n2. La narration : contexte, cause à effet, implications\n3. La visualisation : graphiques clairs, hiérarchie visuelle\n\nPourquoi critique : un insight non communiqué = un insight inutile. Les décideurs prennent des décisions basées sur des histoires, pas des tableaux Excel.\n\nBonnes pratiques :\n- Commencer par la conclusion (pyramid principle)\n- Adapter le niveau de détail à l\'audience\n- Utiliser le bon type de graphique selon le message\n- Éviter le chartjunk (éléments décoratifs sans valeur)\n- Une slide = une idée\n\nOutils : Power BI, Tableau, Flourish, Datawrapper.'},
-
 {id:143,cat:'Théorie',level:'advanced',type:'qcm',
 q:'Qu\'est-ce que le principe de "data minimization" et pourquoi est-il important ?',
 opts:['Compresser les données','Ne collecter et conserver que les données strictement nécessaires à la finalité déclarée — principe fondamental du RGPD et bonne pratique de gouvernance','Supprimer les doublons','Réduire la taille des fichiers'],
@@ -1773,12 +1597,6 @@ RETURN
 DATEDIFF(derniere_date, aujourd_hui, DAY)`,
 expl:'DATEDIFF(date_début, date_fin, intervalle) calcule la différence entre deux dates. TODAY() retourne la date du jour. ALLEXCEPT conserve le filtre client. La récence est le R du modèle RFM (Récence, Fréquence, Montant).'},
 
-{id:149,cat:'Théorie',level:'advanced',type:'qcm',
-q:'Qu\'est-ce que le modèle RFM et comment l\'utiliser pour segmenter les clients ?',
-opts:['Un framework de machine learning','Un modèle de segmentation client basé sur la Récence, la Fréquence et le Montant dépensé','Un indicateur financier','Un type de dashboard'],
-ans:1,
-expl:'RFM score chaque client sur 3 dimensions (1-5). R élevé = achat récent. F élevée = achète souvent. M élevé = dépense beaucoup. Segments : Champions (5-5-5), Fidèles (4-5-x), À risque (2-4-4), Perdus (1-1-1). Permet des actions ciblées : réactivation, fidélisation, upsell.'},
-
 {id:150,cat:'Théorie',level:'inter',type:'open',
 q:'Qu\'est-ce que le principe de "shift left" en qualité des données ?',
 expl:'Le shift left signifie détecter et corriger les problèmes de qualité le plus tôt possible dans le pipeline.\n\nTraditionnellement : les erreurs sont découvertes par les utilisateurs finaux dans les rapports (trop tard).\n\nShift left : intégrer les contrôles dès l\'ingestion :\n- Validation du schéma à l\'entrée\n- Tests automatiques après chaque transformation (dbt tests)\n- Alertes en cas d\'anomalie de volume ou de valeur\n- Data contracts entre producteurs et consommateurs\n\nAvantages : coût de correction 10x moins élevé en amont, confiance accrue, moins d\'incidents.\n\nOutils : Great Expectations, Soda, dbt tests, Pydantic.'}
@@ -1791,6 +1609,7 @@ expl:'Le shift left signifie détecter et corriger les problèmes de qualité le
 let F={cat:'all',level:'all',type:'all',status:'all'};
 let answered={};
 let qcmScore=0, qcmAnswered=0;
+let sessionSeed=Math.floor(Math.random()*100000);
 
 const LS_KEY='dataprep_v1';
 
@@ -1824,6 +1643,7 @@ function cancelReset(){
 }
 function confirmReset(){
   answered={};qcmScore=0;qcmAnswered=0;
+  sessionSeed=Math.floor(Math.random()*100000);
   saveState();
   document.getElementById('scorePill').innerHTML='QCM : <strong>0 / 0</strong>';
   cancelReset();
@@ -1855,6 +1675,18 @@ function setF(dim,val,el){
 // ══════════════════════════════════════════
 // RENDER
 // ══════════════════════════════════════════
+// Mélange déterministe basé sur l'id (stable au re-rendu)
+function shuffleOpts(opts, ans, seed){
+  const items = opts.map((text, orig) => ({text, orig}));
+  let s = (seed + sessionSeed) * 9301 + 49297;
+  for(let i = items.length - 1; i > 0; i--){
+    s = (s * 9301 + 49297) % 233280;
+    const j = Math.floor((s / 233280) * (i + 1));
+    [items[i], items[j]] = [items[j], items[i]];
+  }
+  return items;
+}
+
 function render(){
   const list=document.getElementById('qList');
   const filtered=getFiltered();
@@ -1877,14 +1709,16 @@ function render(){
     const doneTag=st?`<span class="badge b-done" style="margin-left:auto">${st.correct===true?'✓':st.correct===false?'✗':'✓'}</span>`:'<span class="q-num">#'+String(q.id).padStart(2,'0')+'</span>';
 
     // Table preview
-    const tpHtml=q.tables?tablePreview(q.tables):'';
+    const tpHtml=(q.type==='code'&&q.tables)?tablePreview(q.tables):'';
 
     let body='';
     if(q.type==='qcm'){
-      const opts=q.opts.map((o,i)=>{
+      // Mélange stable des options : seed basé sur l'id de la question
+      const shuffled=shuffleOpts(q.opts, q.ans, q.id);
+      const opts=shuffled.map((item,i)=>{
         let cls='opt';
-        if(st!==undefined){cls+=' disabled';if(i===q.ans)cls+=' correct';else if(st.chosen===i)cls+=' wrong';}
-        return`<div class="${cls}" onclick="answerQCM(${q.id},${i})"><span class="opt-l">${['A','B','C','D'][i]}</span>${o}</div>`;
+        if(st!==undefined){cls+=' disabled';if(item.orig===q.ans)cls+=' correct';else if(st.chosen===i)cls+=' wrong';}
+        return`<div class="${cls}" onclick="answerQCM(${q.id},${i},${item.orig})"><span class="opt-l">${['A','B','C','D'][i]}</span>${item.text}</div>`;
       }).join('');
       const fb=st?( st.correct?'<span class="feedback fb-ok">✓ Bonne réponse</span>':'<span class="feedback fb-ko">✗ Mauvaise réponse</span>' ):'';
       body=`<p class="q-text">${q.q}</p>${tpHtml}<div class="options">${opts}</div><div class="btn-row">${fb}</div>
@@ -1919,10 +1753,10 @@ function render(){
   updateStats(filtered);
 }
 
-function answerQCM(qid,chosen){
+function answerQCM(qid,chosen,origIndex){
   if(answered[qid]!==undefined)return;
   const q=Q.find(x=>x.id===qid);
-  const correct=chosen===q.ans;
+  const correct=origIndex===q.ans;
   answered[qid]={type:'qcm',correct,chosen};
   if(correct)qcmScore++;
   qcmAnswered++;
@@ -1936,7 +1770,20 @@ function reveal(qid){
   if(!answered[qid])answered[qid]={type:'other',correct:null};
   saveState();
   const el=document.getElementById('expl-'+qid);
-  if(el)el.classList.add('show');
+  if(el){
+    const isOpen=el.classList.contains('show');
+    el.classList.toggle('show');
+    const btn=document.querySelector(`button[onclick="reveal(${qid})"]`);
+    if(btn){
+      const labels={
+        code:['Voir la correction','Masquer la correction'],
+        other:['Voir les éléments de réponse','Masquer les éléments de réponse']
+      };
+      const q=Q.find(x=>x.id===qid);
+      const pair=labels[q&&q.type==='code'?'code':'other'];
+      btn.textContent=isOpen?pair[0]:pair[1];
+    }
+  }
   updateTabProgress();
   updateStats(getFiltered());
 }
